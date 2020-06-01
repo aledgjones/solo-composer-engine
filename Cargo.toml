@@ -8,18 +8,23 @@ edition = "2018"
 crate-type = ["cdylib", "rlib"]
 
 [features]
-default = ["console_error_panic_hook", "wee_alloc"]
+default = ["console_error_panic_hook"]
 
 [dependencies]
-console-web = "0.1.2"
-serde = "^1.0.59"
-serde_derive = "^1.0.59"
+js-sys = "0.3.40"
+serde = "1.0.59"
+serde_derive = "1.0.59"
+serde_repr = "0.1"
+wasm-typescript-definition = "0.1.0"
 console_error_panic_hook = { version = "0.1.1", optional = true }
-wee_alloc = { version = "0.4.2", optional = true }
 
 [dependencies.wasm-bindgen]
-version = "^0.2"
+version = "0.2.63"
 features = ["serde-serialize"]
+
+[dependencies.web-sys]
+version = "0.3.40"
+features = ["Window", "Storage"]
 
 [dev-dependencies]
 wasm-bindgen-test = "0.2"
