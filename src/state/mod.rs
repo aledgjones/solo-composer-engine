@@ -1,22 +1,30 @@
 mod app;
-mod meta;
-mod theme;
+mod playback;
+mod score;
+mod ui;
 
 use crate::state::app::App;
-use crate::state::meta::Meta;
+use crate::state::playback::Playback;
+use crate::state::score::Score;
+use crate::state::ui::Ui;
+
 use wasm_bindgen::prelude::*;
 
 #[derive(Serialize)]
 struct State {
-    meta: Meta,
     app: App,
+    playback: Playback,
+    score: Score,
+    ui: Ui,
 }
 
 impl State {
     fn new() -> State {
         State {
-            meta: Meta::new(),
             app: App::new(),
+            playback: Playback::new(),
+            score: Score::new(),
+            ui: Ui::new(),
         }
     }
 }

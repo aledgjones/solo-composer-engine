@@ -22,11 +22,11 @@ impl Meta {
 #[wasm_bindgen]
 impl Engine {
     pub fn set_title(&mut self, value: String) {
-        self.state.meta.title = value;
+        self.state.score.meta.title = value;
         self.emit();
     }
     pub fn set_composer(&mut self, value: String) {
-        self.state.meta.composer = value;
+        self.state.score.meta.composer = value;
         self.emit();
     }
 }
