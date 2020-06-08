@@ -1,5 +1,8 @@
 [package]
-name = "solo-composer-parser"
+name = "solo-composer-engine"
+description = "Data layer for Solo Composer"
+repository = "https://github.com/aledgjones/solo-composer-engine"
+license = "GNU GPLv3"
 version = "0.1.0"
 authors = ["Aled Jones <aledjones.viola@gmail.com>"]
 edition = "2018"

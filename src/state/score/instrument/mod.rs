@@ -1,4 +1,4 @@
-mod defs;
+pub mod defs;
 
 use crate::state::score::instrument::defs::INSTRUMENT_DEFS;
 use crate::state::Engine;
@@ -8,11 +8,11 @@ use wasm_bindgen::prelude::*;
 
 #[derive(Serialize)]
 pub struct Instrument {
-    key: String,
-    id: String,
-    long_name: String,
-    short_name: String,
-    staves: Vec<String>,
+    pub key: String,
+    pub id: String,
+    pub long_name: String,
+    pub short_name: String,
+    pub staves: Vec<String>,
 }
 
 #[derive(Serialize)]
@@ -44,8 +44,8 @@ impl Engine {
                 .collect::<Vec<String>>(),
         };
         let return_value = CreateInstrumentReturn {
-            key: instrument.key.clone(),
-            patches: def.patches.clone(),
+            key: instrument.key.clone(),  // return the newly created instrument's key
+            patches: def.patches.clone(), // we are actually going to deal with playback js side
         };
         self.state
             .score

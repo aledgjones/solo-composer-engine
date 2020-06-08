@@ -35,9 +35,9 @@ impl Expression {
 
 #[derive(Serialize)]
 pub struct StaveDef {
-    lines: u8,
-    clef: &'static str,
-    offset: u8,
+    pub lines: u8,
+    pub clef: &'static str,
+    pub offset: u8,
 }
 
 #[derive(Serialize)]

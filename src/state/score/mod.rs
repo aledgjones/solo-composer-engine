@@ -4,6 +4,8 @@ mod flow;
 mod instrument;
 mod meta;
 mod player;
+mod stave;
+mod track;
 
 use crate::state::score::config::Config;
 use crate::state::score::engrave::{Engrave, LayoutType};

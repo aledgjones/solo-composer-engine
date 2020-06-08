@@ -1,3 +1,6 @@
+use crate::state::score::instrument::defs::INSTRUMENT_DEFS;
+use crate::state::score::stave::Stave;
+use crate::state::score::track::Track;
 use crate::state::Engine;
 use crate::utils::shortid;
 use std::collections::HashMap;
@@ -50,16 +53,16 @@ impl Players {
 impl Engine {
     pub fn create_player(&mut self, player_type: PlayerType) -> JsValue {
         let player = Player::new(player_type);
-        let player_key = player.key.clone(); // this will be the return value
+        let player_key = player.key.clone();
 
-        self.state.score.players.order.push(player.key.clone());
+        self.state.score.players.order.push(player_key.clone());
 
         // include new player in all flows
         for flow_key in &self.state.score.flows.order {
             let flow = self.state.score.flows.by_key.get_mut(flow_key);
             match flow {
                 Some(flow) => {
-                    flow.players.insert(player.key.clone());
+                    flow.players.insert(player_key.clone());
                 }
                 None => {} // won't happen but we ignore if it does
             }
@@ -69,7 +72,7 @@ impl Engine {
             .score
             .players
             .by_key
-            .insert(player.key.clone(), player);
+            .insert(player_key.clone(), player);
 
         self.emit();
 
@@ -81,15 +84,47 @@ impl Engine {
      */
     pub fn assign_instrument(&mut self, player_key: &str, instrument_key: &str) -> JsValue {
         let player_key = String::from(player_key);
-        let player = self.state.score.players.by_key.get_mut(&player_key);
-        match player {
+        let instrument_key = String::from(instrument_key);
+
+        match self.state.score.players.by_key.get_mut(&player_key) {
             Some(player) => {
-                let instrument_key = String::from(instrument_key);
-                player.instruments.push(instrument_key);
+                // push the instrument_key into the player (assignment actually happens here)
+                player.instruments.push(instrument_key.clone());
             }
             None => return JsValue::UNDEFINED,
+        };
+
+        // unwrap manually -- we can't just pass back the None to js as it expects a JsValue.
+        let instrument = match self.state.score.instruments.get(&instrument_key) {
+            Some(instrument) => instrument,
+            None => return JsValue::UNDEFINED,
+        };
+        let instrument_def = match INSTRUMENT_DEFS.get(&instrument.id) {
+            Some(instrument_def) => instrument_def,
+            None => return JsValue::UNDEFINED,
+        };
+
+        // add empty staves to each flow that contains the player
+        for flow_key in &self.state.score.flows.order {
+            match self.state.score.flows.by_key.get_mut(flow_key) {
+                Some(flow) => {
+                    if flow.players.contains(&player_key) {
+                        for (i, stave_key) in instrument.staves.iter().enumerate() {
+                            let track = Track::new();
+                            let mut stave =
+                                Stave::new(stave_key.clone(), &instrument_def.staves[i]);
+                            stave.tracks.push(track.key.clone());
+
+                            flow.tracks.insert(track.key.clone(), track);
+                            flow.staves.insert(stave.key.clone(), stave);
+                        }
+                    }
+                }
+                None => {} // won't happen but we ignore if it does
+            };
         }
+
         self.emit();
-        JsValue::TRUE
+        JsValue::from_str(&player_key)
     }
 }
