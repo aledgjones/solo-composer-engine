@@ -1,5 +1,5 @@
 use crate::log;
-use crate::state::score::instrument::defs::INSTRUMENT_DEFS;
+use crate::state::score::instrument::defs::get_def;
 use crate::state::score::stave::Stave;
 use crate::state::score::track::Track;
 use crate::state::Engine;
@@ -90,14 +90,14 @@ impl Engine {
 
         // add stave / tracks for each instrument in the score
         for (_instrument_key, instrument) in &self.state.score.instruments {
-            let instrument_def = match INSTRUMENT_DEFS.get(&instrument.id) {
+            let def = match get_def(&instrument.id.as_str()) {
                 Some(instrument_def) => instrument_def,
                 None => return JsValue::UNDEFINED,
             };
 
             for (i, stave_key) in instrument.staves.iter().enumerate() {
                 let track = Track::new();
-                let mut stave = Stave::new(stave_key.clone(), &instrument_def.staves[i]);
+                let mut stave = Stave::new(stave_key.clone(), &def.staves[i]);
                 stave.tracks.push(track.key.clone());
                 flow.tracks.insert(track.key.clone(), track);
                 flow.staves.insert(stave.key.clone(), stave);

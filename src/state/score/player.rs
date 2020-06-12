@@ -1,4 +1,4 @@
-use crate::state::score::instrument::defs::INSTRUMENT_DEFS;
+use crate::state::score::instrument::defs::get_def;
 use crate::state::score::stave::Stave;
 use crate::state::score::track::Track;
 use crate::state::Engine;
@@ -99,7 +99,7 @@ impl Engine {
             Some(instrument) => instrument,
             None => return JsValue::UNDEFINED,
         };
-        let instrument_def = match INSTRUMENT_DEFS.get(&instrument.id) {
+        let instrument_def = match get_def(&instrument.id.as_str()) {
             Some(instrument_def) => instrument_def,
             None => return JsValue::UNDEFINED,
         };

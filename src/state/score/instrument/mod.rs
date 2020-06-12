@@ -1,6 +1,7 @@
 pub mod defs;
+pub mod utils;
 
-use crate::state::score::instrument::defs::INSTRUMENT_DEFS;
+use crate::state::score::instrument::defs::get_def;
 use crate::state::Engine;
 use crate::utils::shortid;
 use std::collections::HashMap;
@@ -27,8 +28,7 @@ impl Engine {
      * Create an instrument
      */
     pub fn create_instrument(&mut self, id: &str) -> JsValue {
-        let def = INSTRUMENT_DEFS.get(&String::from(id));
-        let def = match def {
+        let def = match get_def(&id) {
             Some(def) => def,
             None => return JsValue::UNDEFINED,
         };
