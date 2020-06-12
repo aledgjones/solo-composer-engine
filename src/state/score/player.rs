@@ -127,4 +127,10 @@ impl Engine {
         self.emit();
         JsValue::from_str(&player_key)
     }
+
+    pub fn reorder_player(&mut self, old_index: usize, new_index: usize) {
+        let removed = self.state.score.players.order.remove(old_index);
+        self.state.score.players.order.insert(new_index, removed);
+        self.emit();
+    }
 }

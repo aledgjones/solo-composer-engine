@@ -87,8 +87,23 @@ lazy_static! {
                 patches: hashmap! {
                     Expression::Natural.to_str() => "/patches/viola/natural.json",
                     Expression::Pizzicato.to_str() => "/patches/viola/pizzicato.json",
-                    Expression::Spiccato.to_str() => "/patches/viola/spiccato.json",
-                    Expression::Tremolo.to_str() => "/patches/viola/tremolo.json"
+                    Expression::Staccato.to_str() => "/patches/viola/staccato.json"
+                },
+            },
+            InstrumentDef {
+                id: "strings.violoncello",
+                path: vec!["Strings", "Violoncello"],
+                long_name: "Violoncello",
+                short_name: "Vc.",
+                staves: vec![StaveDef {
+                    lines: 5,
+                    clef: "F3",
+                    offset: 2,
+                }],
+                patches: hashmap! {
+                    Expression::Natural.to_str() => "/patches/violoncello/natural.json",
+                    Expression::Pizzicato.to_str() => "/patches/violoncello/pizzicato.json",
+                    Expression::Staccato.to_str() => "/patches/violoncello/staccato.json"
                 },
             },
             InstrumentDef {
