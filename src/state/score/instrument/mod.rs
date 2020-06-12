@@ -67,6 +67,7 @@ impl Engine {
     }
 
     pub fn remove_instrument(&mut self, player_key: &str, instrument_key: &str) {
+        // remove from the player entry
         match self.state.score.players.by_key.get_mut(player_key) {
             Some(player) => {
                 player.instruments.retain(|e| e != instrument_key);
@@ -85,15 +86,17 @@ impl Engine {
                 None => return (),
             };
 
-            for stave_key in stave_keys {
-                let stave = match flow.staves.get(stave_key) {
-                    Some(stave) => stave,
-                    None => return (),
-                };
-                for track_key in &stave.tracks {
-                    flow.tracks.remove(track_key);
+            if flow.players.contains(player_key) {
+                for stave_key in stave_keys {
+                    let stave = match flow.staves.get(stave_key) {
+                        Some(stave) => stave,
+                        None => return (),
+                    };
+                    for track_key in &stave.tracks {
+                        flow.tracks.remove(track_key);
+                    }
+                    flow.staves.remove(stave_key);
                 }
-                flow.staves.remove(stave_key);
             }
         }
 

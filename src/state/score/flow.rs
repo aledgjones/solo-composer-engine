@@ -133,4 +133,81 @@ impl Engine {
         self.state.score.flows.by_key.remove(flow_key);
         self.emit();
     }
+
+    /**
+     * Assign a player to a flow
+     */
+    pub fn assign_player(&mut self, flow_key: &str, player_key: &str) {
+        // add the player_key to the flow
+        let flow = match self.state.score.flows.by_key.get_mut(flow_key) {
+            Some(flow) => flow,
+            None => return (),
+        };
+        flow.players.insert(String::from(player_key));
+
+        // get all the insturments assigned to the player
+        let instrument_keys = match self.state.score.players.by_key.get(player_key) {
+            // we need to clone so instrument_keys isn't a ref to self and so we can use it later
+            Some(player) => player.instruments.clone(),
+            None => return (),
+        };
+
+        // add staves and tracks to this flow
+        for instrument_key in instrument_keys {
+            let instrument = match self.state.score.instruments.get(&instrument_key) {
+                Some(instrument) => instrument,
+                None => return (),
+            };
+            let def = match get_def(&instrument.id.as_str()) {
+                Some(instrument_def) => instrument_def,
+                None => return (),
+            };
+
+            for (i, stave_key) in instrument.staves.iter().enumerate() {
+                let track = Track::new();
+                let mut stave = Stave::new(stave_key.clone(), &def.staves[i]);
+                stave.tracks.push(track.key.clone());
+                flow.tracks.insert(track.key.clone(), track);
+                flow.staves.insert(stave.key.clone(), stave);
+            }
+        }
+
+        self.emit();
+    }
+
+    pub fn unassign_player(&mut self, flow_key: &str, player_key: &str) {
+        // remove the player_key from the flow
+        let flow = match self.state.score.flows.by_key.get_mut(flow_key) {
+            Some(flow) => flow,
+            None => return (),
+        };
+        flow.players.remove(player_key);
+
+        // get all the insturments assigned to the player
+        let instrument_keys = match self.state.score.players.by_key.get(player_key) {
+            // we need to clone so instrument_keys isn't a ref to self and so we can use it later
+            Some(player) => player.instruments.clone(),
+            None => return (),
+        };
+
+        // delete staves and tracks in this flow
+        for instrument_key in instrument_keys {
+            let stave_keys = match self.state.score.instruments.get(&instrument_key) {
+                Some(instrument) => &instrument.staves,
+                None => return (),
+            };
+            for stave_key in stave_keys {
+                let stave = match flow.staves.get(stave_key) {
+                    Some(stave) => stave,
+                    None => return (),
+                };
+                for track_key in &stave.tracks {
+                    flow.tracks.remove(track_key);
+                }
+                flow.staves.remove(stave_key);
+            }
+        }
+
+        self.emit();
+    }
 }
