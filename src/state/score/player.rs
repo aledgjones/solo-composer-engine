@@ -133,4 +133,31 @@ impl Engine {
         self.state.score.players.order.insert(new_index, removed);
         self.emit();
     }
+
+    pub fn remove_player(&mut self, player_key: &str) {
+        // delete all instruments that this player holds
+        let instrument_keys = match self.state.score.players.by_key.get(player_key) {
+            // we need to clone so instrument_keys isn't a ref to self and so we can use it later
+            Some(player) => player.instruments.clone(),
+            None => return (),
+        };
+        for instrument_key in instrument_keys {
+            self.remove_instrument(player_key, &instrument_key);
+        }
+
+        // remove the player from each flow
+        for flow_key in &self.state.score.flows.order {
+            let flow = match self.state.score.flows.by_key.get_mut(flow_key) {
+                Some(flow) => flow,
+                None => return (),
+            };
+            flow.players.remove(player_key);
+        }
+
+        // remove the player itself
+        self.state.score.players.by_key.remove(player_key);
+        self.state.score.players.order.retain(|e| e != player_key);
+
+        self.emit();
+    }
 }
