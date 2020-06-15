@@ -12,8 +12,8 @@ pub struct Meta {
 impl Meta {
     pub fn new() -> Meta {
         Meta {
-            title: String::from("Untitled"),
-            composer: String::from("Unknown"),
+            title: String::from("Untitled Score"),
+            composer: String::from("Unknown Composer"),
             created: Date::now(),
         }
     }
