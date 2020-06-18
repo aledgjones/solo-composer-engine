@@ -1,4 +1,3 @@
-use crate::log;
 use crate::state::score::instrument::defs::get_def;
 use crate::state::score::stave::Stave;
 use crate::state::score::track::Track;
@@ -46,16 +45,13 @@ impl Flow {
     pub fn new() -> Flow {
         Flow {
             key: shortid(),
-            title: Flow::default_title(),
+            title: String::from(""),
             players: HashSet::new(),
             tick_length: NoteLength::SemiQuaver,
             length: 1.0,
             staves: HashMap::new(),
             tracks: HashMap::new(),
         }
-    }
-    pub fn default_title() -> String {
-        String::from("Untitled Flow")
     }
 }
 
@@ -107,6 +103,7 @@ impl Engine {
         self.state.score.flows.order.push(flow.key.clone());
         self.state.score.flows.by_key.insert(flow.key.clone(), flow);
 
+        self.update();
         self.emit();
 
         JsValue::from_str(&flow_key)
@@ -119,18 +116,21 @@ impl Engine {
             }
             None => return (),
         };
+        self.update();
         self.emit();
     }
 
     pub fn reorder_flow(&mut self, old_index: usize, new_index: usize) {
         let removed = self.state.score.flows.order.remove(old_index);
         self.state.score.flows.order.insert(new_index, removed);
+        self.update();
         self.emit();
     }
 
     pub fn remove_flow(&mut self, flow_key: &str) {
         self.state.score.flows.order.retain(|e| e != flow_key);
         self.state.score.flows.by_key.remove(flow_key);
+        self.update();
         self.emit();
     }
 
@@ -172,6 +172,7 @@ impl Engine {
             }
         }
 
+        self.update();
         self.emit();
     }
 
@@ -208,6 +209,7 @@ impl Engine {
             }
         }
 
+        self.update();
         self.emit();
     }
 }

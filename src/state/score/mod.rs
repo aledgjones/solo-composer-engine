@@ -13,7 +13,10 @@ use crate::state::score::flow::Flows;
 use crate::state::score::instrument::Instrument;
 use crate::state::score::meta::Meta;
 use crate::state::score::player::Players;
+use crate::state::Engine;
+use js_sys::Date;
 use std::collections::HashMap;
+use wasm_bindgen::prelude::*;
 
 #[derive(Serialize)]
 pub struct Score {
@@ -42,5 +45,12 @@ impl Score {
             players: Players::new(),
             instruments: HashMap::new(),
         }
+    }
+}
+
+#[wasm_bindgen]
+impl Engine {
+    fn update(&mut self) {
+        self.state.score.meta.modified = Date::now();
     }
 }

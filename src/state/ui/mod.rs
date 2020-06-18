@@ -6,6 +6,7 @@ use wasm_bindgen::prelude::*;
 #[derive(Serialize_repr)]
 #[repr(u8)]
 pub enum View {
+    File,
     Setup,
     Write,
     Engrave,

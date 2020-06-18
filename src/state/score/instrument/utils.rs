@@ -1,4 +1,4 @@
-use crate::state::score::instrument::defs::{InstrumentDef, INSTRUMENT_DEFS};
+use crate::state::score::instrument::defs::INSTRUMENT_DEFS;
 use crate::state::score::instrument::Instrument;
 use crate::state::score::player::PlayerType;
 use crate::state::Engine;

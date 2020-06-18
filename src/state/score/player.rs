@@ -74,6 +74,7 @@ impl Engine {
             .by_key
             .insert(player_key.clone(), player);
 
+        self.update();
         self.emit();
 
         JsValue::from_str(&player_key)
@@ -124,6 +125,7 @@ impl Engine {
             };
         }
 
+        self.update();
         self.emit();
         JsValue::from_str(&player_key)
     }
@@ -131,6 +133,7 @@ impl Engine {
     pub fn reorder_player(&mut self, old_index: usize, new_index: usize) {
         let removed = self.state.score.players.order.remove(old_index);
         self.state.score.players.order.insert(new_index, removed);
+        self.update();
         self.emit();
     }
 
@@ -158,6 +161,7 @@ impl Engine {
         self.state.score.players.by_key.remove(player_key);
         self.state.score.players.order.retain(|e| e != player_key);
 
+        self.update();
         self.emit();
     }
 }

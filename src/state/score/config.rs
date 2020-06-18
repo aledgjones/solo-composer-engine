@@ -41,10 +41,12 @@ impl Config {
 impl Engine {
     pub fn set_auto_count_style_solo(&mut self, value: InstrumentAutoCountStyle) {
         self.state.score.config.auto_count_style.solo = value;
+        self.update();
         self.emit();
     }
     pub fn set_auto_count_style_section(&mut self, value: InstrumentAutoCountStyle) {
         self.state.score.config.auto_count_style.section = value;
+        self.update();
         self.emit();
     }
 }

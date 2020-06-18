@@ -51,6 +51,7 @@ impl Engine {
             .score
             .instruments
             .insert(instrument.key.clone(), instrument);
+        self.update();
         self.emit();
         JsValue::from_serde(&return_value).unwrap()
     }
@@ -63,6 +64,7 @@ impl Engine {
             }
             None => (),
         }
+        self.update();
         self.emit();
     }
 
@@ -101,6 +103,7 @@ impl Engine {
         }
 
         self.state.score.instruments.remove(instrument_key);
+        self.update();
         self.emit();
     }
 }
