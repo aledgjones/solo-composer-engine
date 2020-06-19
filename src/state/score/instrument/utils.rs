@@ -5,18 +5,25 @@ use crate::state::Engine;
 use std::collections::{HashMap, HashSet};
 use wasm_bindgen::prelude::*;
 
-fn append_instrument<'a>(
+fn append_instruments<'a>(
     map: &mut HashMap<&'a String, Vec<&'a String>>,
-    instrument: &'a Instrument,
+    instrument_keys: &Vec<String>,
+    instruments: &'a HashMap<String, Instrument>,
 ) {
-    match map.get_mut(&instrument.long_name) {
-        Some(entry) => {
-            entry.push(&instrument.key);
-        }
-        None => {
-            map.insert(&instrument.long_name, vec![&instrument.key]);
-        }
-    };
+    for instrument_key in instrument_keys {
+        let instrument = match instruments.get(instrument_key) {
+            Some(instrument) => instrument,
+            None => return (),
+        };
+        match map.get_mut(&instrument.long_name) {
+            Some(entry) => {
+                entry.push(&instrument.key);
+            }
+            None => {
+                map.insert(&instrument.long_name, vec![&instrument.key]);
+            }
+        };
+    }
 }
 
 fn insert_counts<'a>(
@@ -53,15 +60,25 @@ impl Engine {
                 Some(player) => player,
                 None => return JsValue::UNDEFINED,
             };
-            for instrument_key in &player.instruments {
-                let instrument = match self.state.score.instruments.get(instrument_key) {
-                    Some(instrument) => instrument,
-                    None => return JsValue::UNDEFINED,
-                };
-                match player.player_type {
-                    PlayerType::Solo => append_instrument(&mut instruments_solo, &instrument),
-                    PlayerType::Section => append_instrument(&mut instruments_section, &instrument),
-                };
+            match player.player_type {
+                PlayerType::Solo => {
+                    if self.state.score.config.auto_count.solo.active == true {
+                        append_instruments(
+                            &mut instruments_solo,
+                            &player.instruments,
+                            &self.state.score.instruments,
+                        );
+                    }
+                }
+                PlayerType::Section => {
+                    if self.state.score.config.auto_count.section.active == true {
+                        append_instruments(
+                            &mut instruments_section,
+                            &player.instruments,
+                            &self.state.score.instruments,
+                        );
+                    }
+                }
             }
         }
 
