@@ -28,6 +28,7 @@ pub enum PlayTool {
 pub struct Ui {
     view: View,
     expanded: HashMap<String, bool>, // expressed in js as object -- perfect for quick lookups
+    keyboard: HashMap<String, u8>,
     play_tool: PlayTool,
 }
 
@@ -36,6 +37,7 @@ impl Ui {
         Ui {
             view: View::Setup,
             expanded: HashMap::new(),
+            keyboard: HashMap::new(),
             play_tool: PlayTool::Select,
         }
     }
@@ -53,6 +55,10 @@ impl Engine {
     }
     pub fn collapse(&mut self, key: &str) {
         self.state.ui.expanded.remove(key);
+        self.emit();
+    }
+    pub fn set_keyboard(&mut self, key: &str, offset: u8) {
+        self.state.ui.keyboard.insert(String::from(key), offset);
         self.emit();
     }
     pub fn set_play_tool(&mut self, value: PlayTool) {
