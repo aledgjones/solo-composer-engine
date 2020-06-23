@@ -14,6 +14,10 @@ pub struct Instrument {
     pub long_name: String,
     pub short_name: String,
     pub staves: Vec<String>,
+
+    pub volume: usize,
+    pub mute: bool,
+    pub solo: bool,
 }
 
 #[derive(Serialize)]
@@ -42,6 +46,10 @@ impl Engine {
                 .iter()
                 .map(|_| shortid())
                 .collect::<Vec<String>>(),
+
+            volume: 80,
+            mute: false,
+            solo: false,
         };
         let return_value = CreateInstrumentReturn {
             key: instrument.key.clone(),  // return the newly created instrument's key
@@ -104,6 +112,36 @@ impl Engine {
 
         self.state.score.instruments.remove(instrument_key);
         self.update();
+        self.emit();
+    }
+
+    pub fn toggle_mute_instrument(&mut self, instrument_key: &str) {
+        match self.state.score.instruments.get_mut(instrument_key) {
+            Some(instrument) => {
+                instrument.mute = !instrument.mute;
+            }
+            None => return (),
+        };
+        self.emit();
+    }
+
+    pub fn toggle_solo_instrument(&mut self, instrument_key: &str) {
+        match self.state.score.instruments.get_mut(instrument_key) {
+            Some(instrument) => {
+                instrument.solo = !instrument.solo;
+            }
+            None => return (),
+        };
+        self.emit();
+    }
+
+    pub fn set_volume_instrument(&mut self, instrument_key: &str, value: usize) {
+        match self.state.score.instruments.get_mut(instrument_key) {
+            Some(instrument) => {
+                instrument.volume = value;
+            }
+            None => return (),
+        };
         self.emit();
     }
 }

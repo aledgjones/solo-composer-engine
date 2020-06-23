@@ -48,6 +48,7 @@ struct FullPathReturn<'a> {
 impl Engine {
     /**
      * Instrument Counts
+     * Will be caculated even if they are not displayed in the UI layer
      */
     pub fn counts(&self) -> JsValue {
         // long_name: instrument_keys[];
@@ -62,22 +63,18 @@ impl Engine {
             };
             match player.player_type {
                 PlayerType::Solo => {
-                    if self.state.score.config.auto_count.solo.active == true {
-                        append_instruments(
-                            &mut instruments_solo,
-                            &player.instruments,
-                            &self.state.score.instruments,
-                        );
-                    }
+                    append_instruments(
+                        &mut instruments_solo,
+                        &player.instruments,
+                        &self.state.score.instruments,
+                    );
                 }
                 PlayerType::Section => {
-                    if self.state.score.config.auto_count.section.active == true {
-                        append_instruments(
-                            &mut instruments_section,
-                            &player.instruments,
-                            &self.state.score.instruments,
-                        );
-                    }
+                    append_instruments(
+                        &mut instruments_section,
+                        &player.instruments,
+                        &self.state.score.instruments,
+                    );
                 }
             }
         }
