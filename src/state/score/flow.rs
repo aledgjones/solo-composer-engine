@@ -1,6 +1,5 @@
 use crate::entries::time_signature::{TimeSignature, TimeSignatureDrawType};
 use crate::entries::{Entry, EntryContent};
-use crate::log;
 use crate::state::score::instrument::defs::get_def;
 use crate::state::score::stave::Stave;
 use crate::state::score::track::Track;
@@ -27,7 +26,7 @@ impl Flow {
             key: shortid(),
             title: String::from(""),
             players: HashSet::new(),
-            length: 4 * 4 * 4, // 4 bars
+            length: 4, // 1 crotchet beat
 
             master: Track::new(),
             staves: HashMap::new(),
@@ -40,7 +39,7 @@ impl Flow {
             content: EntryContent::TimeSignature(TimeSignature::new(
                 0,
                 4, // default to semi-quavers for now
-                4,
+                0,
                 4,
                 TimeSignatureDrawType::Normal,
                 None,
@@ -220,13 +219,11 @@ impl Engine {
             None => return JsValue::from_serde(&ticks).unwrap(), // return an empty tick list
         };
         let mut result: Option<&TimeSignature> = None;
-        let mut resultAt: u32 = 0;
 
         for tick in 0..flow.length {
             match flow.master.get_time_signature_at_tick(tick) {
                 Some(time_signature) => {
                     result = Some(time_signature);
-                    resultAt = tick;
                 }
                 None => (),
             };

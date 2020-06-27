@@ -17,7 +17,7 @@ pub enum View {
 #[wasm_bindgen]
 #[derive(Serialize_repr)]
 #[repr(u8)]
-pub enum PlayTool {
+pub enum Tool {
     Select,
     Draw,
     Slice,
@@ -25,11 +25,27 @@ pub enum PlayTool {
 }
 
 #[derive(Serialize)]
+pub struct UiPlay {
+    pub zoom: f32,
+    pub keyboard: HashMap<String, u8>,
+    pub tool: Tool,
+}
+
+impl UiPlay {
+    pub fn new() -> Self {
+        Self {
+            zoom: 1.0,
+            keyboard: HashMap::new(),
+            tool: Tool::Select,
+        }
+    }
+}
+
+#[derive(Serialize)]
 pub struct Ui {
     view: View,
     expanded: HashMap<String, bool>, // expressed in js as object -- perfect for quick lookups
-    keyboard: HashMap<String, u8>,
-    play_tool: PlayTool,
+    play: UiPlay,
 }
 
 impl Ui {
@@ -37,8 +53,7 @@ impl Ui {
         Ui {
             view: View::Setup,
             expanded: HashMap::new(),
-            keyboard: HashMap::new(),
-            play_tool: PlayTool::Select,
+            play: UiPlay::new(),
         }
     }
 }
@@ -57,12 +72,20 @@ impl Engine {
         self.state.ui.expanded.remove(key);
         self.emit();
     }
-    pub fn set_keyboard(&mut self, key: &str, offset: u8) {
-        self.state.ui.keyboard.insert(String::from(key), offset);
+    pub fn set_play_keyboard(&mut self, key: &str, offset: u8) {
+        self.state
+            .ui
+            .play
+            .keyboard
+            .insert(String::from(key), offset);
         self.emit();
     }
-    pub fn set_play_tool(&mut self, value: PlayTool) {
-        self.state.ui.play_tool = value;
+    pub fn set_play_tool(&mut self, value: Tool) {
+        self.state.ui.play.tool = value;
+        self.emit();
+    }
+    pub fn set_play_zoom(&mut self, value: f32) {
+        self.state.ui.play.zoom = value;
         self.emit();
     }
 }
