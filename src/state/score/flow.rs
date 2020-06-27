@@ -1,3 +1,6 @@
+use crate::entries::time_signature::{TimeSignature, TimeSignatureDrawType};
+use crate::entries::{Entry, EntryContent};
+use crate::log;
 use crate::state::score::instrument::defs::get_def;
 use crate::state::score::stave::Stave;
 use crate::state::score::track::Track;
@@ -6,52 +9,45 @@ use crate::utils::shortid;
 use std::collections::{HashMap, HashSet};
 use wasm_bindgen::prelude::*;
 
-#[wasm_bindgen]
-#[derive(Serialize_repr)]
-#[repr(u8)]
-pub enum NoteLength {
-    Crotchet,
-    DottedQuaver,
-    Quaver,
-    DottedSemiQuaver,
-    SemiQuaver,
-}
-
-impl NoteLength {
-    pub fn to_value(&self) -> f32 {
-        match self {
-            NoteLength::Crotchet => 1.0,
-            NoteLength::DottedQuaver => 0.75,
-            NoteLength::Quaver => 0.5,
-            NoteLength::DottedSemiQuaver => 0.325,
-            NoteLength::SemiQuaver => 0.25,
-        }
-    }
-}
-
 #[derive(Serialize)]
 pub struct Flow {
     pub key: String,
     pub title: String,
     pub players: HashSet<String>, // purely for inclusion lookup -- order comes from score.players.order
-    pub tick_length: NoteLength, // the smallest note length in the score (max: smallest time sig denominator)
-    pub length: f32,             // number of crotchet beats in the flow
+    pub length: u32,              // number of crotchet beats in the flow
 
+    pub master: Track,
     pub staves: HashMap<String, Stave>,
     pub tracks: HashMap<String, Track>,
 }
 
 impl Flow {
     pub fn new() -> Flow {
-        Flow {
+        let mut flow = Flow {
             key: shortid(),
             title: String::from(""),
             players: HashSet::new(),
-            tick_length: NoteLength::SemiQuaver,
-            length: 1.0,
+            length: 4 * 4 * 4, // 4 bars
+
+            master: Track::new(),
             staves: HashMap::new(),
             tracks: HashMap::new(),
-        }
+        };
+
+        flow.master.insert(Entry {
+            tick: 0,
+            key: shortid(),
+            content: EntryContent::TimeSignature(TimeSignature::new(
+                0,
+                4, // default to semi-quavers for now
+                4,
+                4,
+                TimeSignatureDrawType::Normal,
+                None,
+            )),
+        });
+
+        flow
     }
 }
 
@@ -212,4 +208,70 @@ impl Engine {
         self.update();
         self.emit();
     }
+
+    pub fn ticks(&self, flow_key: &str, zoom: f32) -> JsValue {
+        let crotchet_width = 72.0 * zoom;
+        let mut ticks = TickList {
+            list: Vec::new(),
+            width: 0.0,
+        };
+        let flow = match self.state.score.flows.by_key.get(flow_key) {
+            Some(flow) => flow,
+            None => return JsValue::from_serde(&ticks).unwrap(), // return an empty tick list
+        };
+        let mut result: Option<&TimeSignature> = None;
+        let mut resultAt: u32 = 0;
+
+        for tick in 0..flow.length {
+            match flow.master.get_time_signature_at_tick(tick) {
+                Some(time_signature) => {
+                    result = Some(time_signature);
+                    resultAt = tick;
+                }
+                None => (),
+            };
+
+            let time_signature = match result {
+                Some(time_signature) => time_signature,
+                None => return JsValue::from_serde(&ticks).unwrap(), // this will never happen so return early if it does
+            };
+
+            let ticks_per_crotchet = time_signature.ticks_per_beat_type(4);
+            let tick_width = crotchet_width / ticks_per_crotchet as f32;
+
+            ticks.push(Tick {
+                x: ticks.width,
+                width: tick_width,
+                is_beat: time_signature.is_on_beat(tick),
+                is_first_beat: time_signature.is_on_first_beat(tick),
+                is_quaver_beat: time_signature.is_on_beat_type(tick, 8),
+                is_grouping_boundry: time_signature.is_on_grouping_boundry(tick),
+            })
+        }
+
+        JsValue::from_serde(&ticks).unwrap()
+    }
+}
+
+#[derive(Serialize)]
+struct TickList {
+    list: Vec<Tick>,
+    width: f32,
+}
+
+impl TickList {
+    pub fn push(&mut self, tick: Tick) {
+        self.width += tick.width;
+        self.list.push(tick);
+    }
+}
+
+#[derive(Serialize)]
+struct Tick {
+    x: f32,
+    width: f32,
+    is_beat: bool,
+    is_first_beat: bool,
+    is_quaver_beat: bool,
+    is_grouping_boundry: bool,
 }
