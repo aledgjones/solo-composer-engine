@@ -41,8 +41,8 @@ pub struct Players {
 }
 
 impl Players {
-    pub fn new() -> Players {
-        Players {
+    pub fn new() -> Self {
+        Self {
             order: Vec::new(),
             by_key: HashMap::new(),
         }
@@ -53,16 +53,16 @@ impl Players {
 impl Engine {
     pub fn create_player(&mut self, player_type: PlayerType) -> JsValue {
         let player = Player::new(player_type);
-        let player_key = player.key.clone();
+        let returner = JsValue::from_str(&player.key);
 
-        self.state.score.players.order.push(player_key.clone());
+        self.state.score.players.order.push(player.key.clone());
 
         // include new player in all flows
         for flow_key in &self.state.score.flows.order {
             let flow = self.state.score.flows.by_key.get_mut(flow_key);
             match flow {
                 Some(flow) => {
-                    flow.players.insert(player_key.clone());
+                    flow.players.insert(player.key.clone());
                 }
                 None => {} // won't happen but we ignore if it does
             }
@@ -72,12 +72,12 @@ impl Engine {
             .score
             .players
             .by_key
-            .insert(player_key.clone(), player);
+            .insert(player.key.clone(), player);
 
         self.update();
         self.emit();
 
-        JsValue::from_str(&player_key)
+        returner
     }
 
     /**

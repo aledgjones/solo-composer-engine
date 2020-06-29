@@ -1,4 +1,4 @@
-use crate::entries::barline::BarlineType;
+use crate::state::entries::barline::BarlineType;
 use crate::utils::generic::{Font, Justify, Padding, Spaces, MM};
 use crate::utils::shortid;
 
@@ -92,15 +92,3 @@ impl Engrave {
         }
     }
 }
-
-// #[wasm_bindgen]
-// impl Engine {
-//     pub fn set_auto_count_style_solo(&mut self, value: InstrumentAutoCountStyle) {
-//         self.state.score.config.auto_count_style.solo = value;
-//         self.emit();
-//     }
-//     pub fn set_auto_count_style_section(&mut self, value: InstrumentAutoCountStyle) {
-//         self.state.score.config.auto_count_style.section = value;
-//         self.emit();
-//     }
-// }

@@ -1,4 +1,5 @@
 mod app;
+mod entries;
 mod playback;
 mod score;
 mod ui;

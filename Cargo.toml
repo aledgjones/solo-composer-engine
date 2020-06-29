@@ -17,7 +17,7 @@ serde = {version = "1.0.111", features = ["derive"]}
 rand = { version = "0.7.3", features = ["wasm-bindgen"] }
 wasm-bindgen = {version = "0.2.63", features = ["serde-serialize"]}
 console_error_panic_hook = { version = "0.1.6" }
-serde_repr = "0.1.5"
+serde_repr = "0.1.6"
 lazy_static = "1.4.0"
 maplit = "1.0.2"
 

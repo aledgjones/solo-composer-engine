@@ -50,7 +50,7 @@ impl Score {
 
 #[wasm_bindgen]
 impl Engine {
-    fn update(&mut self) {
+    pub fn update(&mut self) {
         self.state.score.meta.modified = Date::now();
     }
 }

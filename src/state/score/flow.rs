@@ -1,5 +1,4 @@
-use crate::entries::time_signature::{TimeSignature, TimeSignatureDrawType};
-use crate::entries::{Entry, EntryContent};
+use crate::state::entries::time_signature::{TimeSignature, TimeSignatureDrawType};
 use crate::state::score::instrument::defs::get_def;
 use crate::state::score::stave::Stave;
 use crate::state::score::track::Track;
@@ -13,7 +12,8 @@ pub struct Flow {
     pub key: String,
     pub title: String,
     pub players: HashSet<String>, // purely for inclusion lookup -- order comes from score.players.order
-    pub length: u32,              // number of crotchet beats in the flow
+    pub length: u32,              // number of subdivision ticks in the flow
+    pub subdivisions: u8,         // how many times to subdevide the crotchet
 
     pub master: Track,
     pub staves: HashMap<String, Stave>,
@@ -26,25 +26,22 @@ impl Flow {
             key: shortid(),
             title: String::from(""),
             players: HashSet::new(),
-            length: 4, // 1 crotchet beat
+            length: 4,       // 1 crotchet beat
+            subdivisions: 4, // auto it to semi-quavers
 
             master: Track::new(),
             staves: HashMap::new(),
             tracks: HashMap::new(),
         };
 
-        flow.master.insert(Entry {
-            tick: 0,
-            key: shortid(),
-            content: EntryContent::TimeSignature(TimeSignature::new(
-                0,
-                4, // default to semi-quavers for now
-                0,
-                4,
-                TimeSignatureDrawType::Normal,
-                None,
-            )),
-        });
+        flow.master.insert(TimeSignature::new(
+            shortid(),
+            0,
+            0,
+            4,
+            TimeSignatureDrawType::Normal,
+            None,
+        ));
 
         flow
     }
@@ -228,21 +225,21 @@ impl Engine {
                 None => (),
             };
 
-            let time_signature = match result {
+            let time_signature = match &result {
                 Some(time_signature) => time_signature,
                 None => return JsValue::from_serde(&ticks).unwrap(), // this will never happen so return early if it does
             };
 
-            let ticks_per_crotchet = time_signature.ticks_per_beat_type(4);
+            let ticks_per_crotchet = time_signature.ticks_per_beat_type(flow.subdivisions, 4);
             let tick_width = crotchet_width / ticks_per_crotchet as f32;
 
             ticks.push(Tick {
                 x: ticks.width,
                 width: tick_width,
-                is_beat: time_signature.is_on_beat(tick),
-                is_first_beat: time_signature.is_on_first_beat(tick),
-                is_quaver_beat: time_signature.is_on_beat_type(tick, 8),
-                is_grouping_boundry: time_signature.is_on_grouping_boundry(tick),
+                is_beat: time_signature.is_on_beat(tick, flow.subdivisions),
+                is_first_beat: time_signature.is_on_first_beat(tick, flow.subdivisions),
+                is_quaver_beat: time_signature.is_on_beat_type(tick, flow.subdivisions, 8),
+                is_grouping_boundry: time_signature.is_on_grouping_boundry(tick, flow.subdivisions),
             })
         }
 

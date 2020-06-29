@@ -1,3 +1,4 @@
+use crate::state::entries::Entry;
 use crate::utils::generic::{BoundingBox, Padding, Spaces};
 use wasm_bindgen::prelude::*;
 
@@ -15,13 +16,21 @@ pub enum BarlineType {
 
 #[derive(Debug, Serialize)]
 pub struct Barline {
-    key: String,
-    tick: f32,
-    barline_type: BarlineType,
+    pub key: String,
+    pub tick: u32,
+    pub barline_type: BarlineType,
 }
 
 impl Barline {
-    fn r#box(&self) -> BoundingBox {
+    pub fn new(key: String, tick: u32, barline_type: BarlineType) -> Entry {
+        Entry::Barline(Barline {
+            key,
+            tick,
+            barline_type,
+        })
+    }
+
+    fn metrics(&self) -> BoundingBox {
         match self.barline_type {
             BarlineType::Double => BoundingBox {
                 width: Spaces(0.5),

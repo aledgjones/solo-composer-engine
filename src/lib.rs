@@ -1,7 +1,5 @@
-mod utils;
-
-mod entries;
 mod state;
+mod utils;
 
 use wasm_bindgen::prelude::*;
 
