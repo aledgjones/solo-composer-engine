@@ -112,6 +112,17 @@ impl Engine {
         self.emit();
     }
 
+    pub fn set_flow_length(&mut self, flow_key: &str, length: u32) {
+        match self.state.score.flows.by_key.get_mut(flow_key) {
+            Some(flow) => {
+                flow.length = length;
+            }
+            None => return (),
+        };
+        self.update();
+        self.emit();
+    }
+
     pub fn reorder_flow(&mut self, old_index: usize, new_index: usize) {
         let removed = self.state.score.flows.order.remove(old_index);
         self.state.score.flows.order.insert(new_index, removed);
