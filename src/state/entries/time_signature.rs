@@ -121,37 +121,35 @@ impl TimeSignature {
 
     // Returns true if the tick is on the first beat of the bar
     pub fn is_on_first_beat(&self, tick: u32, subdivisions: u8) -> bool {
-        // always return false for open time signatures
-        if self.beats == 0 {
-            false
-        } else {
-            ((tick - self.tick) % self.ticks_per_bar(subdivisions) as u32) == 0
+        match self.kind() {
+            TimeSignatureType::Open => tick == self.tick,
+            _ => ((tick - self.tick) % self.ticks_per_bar(subdivisions) as u32) == 0,
         }
     }
 
     // Returns true is the tick is on a beat group boundry
     pub fn is_on_grouping_boundry(&self, tick: u32, subdivisions: u8) -> bool {
-        // always return false for open time signatures
-        if self.beats == 0 {
-            false
-        } else {
-            let ticks_per_beat = self.ticks_per_beat_type(subdivisions, self.beat_type);
-            let bar_length = (ticks_per_beat * self.beats) as u32;
-            let distance_from_first_beat = (tick - self.tick) % bar_length;
+        match self.kind() {
+            TimeSignatureType::Open => false,
+            _ => {
+                let ticks_per_beat = self.ticks_per_beat_type(subdivisions, self.beat_type);
+                let bar_length = (ticks_per_beat * self.beats) as u32;
+                let distance_from_first_beat = (tick - self.tick) % bar_length;
 
-            if distance_from_first_beat == 0 {
-                return true;
-            }
-
-            let mut offset: u32 = 0;
-            for group in &self.groupings {
-                offset += (group * ticks_per_beat) as u32;
-                if distance_from_first_beat == offset {
+                if distance_from_first_beat == 0 {
                     return true;
                 }
-            }
 
-            false
+                let mut offset: u32 = 0;
+                for group in &self.groupings {
+                    offset += (group * ticks_per_beat) as u32;
+                    if distance_from_first_beat == offset {
+                        return true;
+                    }
+                }
+
+                false
+            }
         }
     }
 
