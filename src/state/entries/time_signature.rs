@@ -54,7 +54,12 @@ impl TimeSignature {
     }
 
     /// Return the time signature type Open, Compound, Simple or Complex.
-    fn kind(beats: u8) -> TimeSignatureType {
+    fn kind(&self) -> TimeSignatureType {
+        TimeSignature::kind_from_beats(self.beats)
+    }
+
+    /// Return the time signature type Open, Compound, Simple or Complex.
+    fn kind_from_beats(beats: u8) -> TimeSignatureType {
         if beats == 0 {
             TimeSignatureType::Open
         } else if beats > 3 && beats % 3 == 0 {
@@ -70,7 +75,7 @@ impl TimeSignature {
         if beats > 0 && beats <= 3 {
             vec![1; beats as usize]
         } else {
-            match TimeSignature::kind(beats) {
+            match TimeSignature::kind_from_beats(beats) {
                 TimeSignatureType::Simple => vec![2; (beats as usize) / 2],
                 TimeSignatureType::Compound => vec![3; (beats as usize) / 3],
                 TimeSignatureType::Complex => {
@@ -209,30 +214,40 @@ impl Engine {
                 _ => return JsValue::UNDEFINED, // will never happen, something has gone horribly wrong!
             };
 
-            let bar_length = time_signature.ticks_per_bar(flow.subdivisions) as u32;
+            // we want to create full bars when we insert time sigs,
+            // however open time sigs don't have bar lengths in reality so ignore this step
+            match time_signature.kind() {
+                TimeSignatureType::Open => (),
+                _ => {
+                    let bar_length = time_signature.ticks_per_bar(flow.subdivisions) as u32;
 
-            // calculate how may ticks we have filled of the last bar before
-            let overflow = match flow.master.get_time_signature_after_tick(tick, flow.length) {
-                Some(next_time_signature) => (next_time_signature.tick - tick) % bar_length,
-                None => ((flow.length - tick) % bar_length),
-            };
+                    // calculate how may ticks we have filled of the last bar before
+                    let overflow = match flow
+                        .master
+                        .get_time_signature_after_tick(tick, flow.length)
+                    {
+                        Some(next_time_signature) => (next_time_signature.tick - tick) % bar_length,
+                        None => ((flow.length - tick) % bar_length),
+                    };
 
-            if overflow > 0 {
-                // add aditional ticks to flow length to make full bars
-                flow.length += bar_length - overflow;
-            }
-
-            // offset all remaining time sigs by remainder
-            for i in tick + 1..flow.length {
-                let key = match flow.master.get_time_signature_at_tick(i) {
-                    Some(time_signature) => Some(time_signature.key.clone()),
-                    None => None,
-                };
-                match key {
-                    Some(key) => {
-                        flow.master.r#move(&i, i + (bar_length - overflow), &key);
+                    if overflow > 0 {
+                        // add aditional ticks to flow length to make full bars
+                        flow.length += bar_length - overflow;
                     }
-                    None => (),
+
+                    // offset all remaining time sigs by remainder
+                    for i in tick + 1..flow.length {
+                        let key = match flow.master.get_time_signature_at_tick(i) {
+                            Some(time_signature) => Some(time_signature.key.clone()),
+                            None => None,
+                        };
+                        match key {
+                            Some(key) => {
+                                flow.master.r#move(&i, i + (bar_length - overflow), &key);
+                            }
+                            None => (),
+                        }
+                    }
                 }
             }
 
