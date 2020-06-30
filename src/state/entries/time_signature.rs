@@ -16,10 +16,9 @@ enum TimeSignatureType {
 #[repr(u8)]
 pub enum TimeSignatureDrawType {
     Hidden,          // always hidden
-    Normal,          // open time sig hidden, others as normal
+    Normal,          // open time sig as 'X'
     CommonTime,      // 'C'
     SplitCommonTime, // '¢'
-    Free,            // 'X'
 }
 
 #[derive(Debug, Serialize)]
@@ -42,7 +41,7 @@ impl TimeSignature {
         groupings: Option<Vec<u8>>,
     ) -> Entry {
         Entry::TimeSignature(TimeSignature {
-            key: shortid(),
+            key,
             tick,
             beats,
             beat_type,
@@ -187,7 +186,7 @@ impl Engine {
                 None => return JsValue::UNDEFINED,
             };
 
-            // if there is already a time isg at this tick we want to replace it
+            // if there is already a time isg at this tick we remove it
             let old_key = match flow.master.get_time_signature_at_tick(tick) {
                 Some(time_signature) => Some(time_signature.key.clone()),
                 None => None,
@@ -200,14 +199,14 @@ impl Engine {
                 None => (),
             };
 
+            // we insert the new time sig
             let entry =
                 TimeSignature::new(key.clone(), tick, beats, beat_type, draw_type, groupings);
-            flow.master.insert(entry);
 
-            // once we insert we lose reference so we have to get it manually to work on later
-            let time_signature = match flow.master.get_time_signature_at_tick(tick) {
-                Some(time_signature) => time_signature,
-                None => return JsValue::UNDEFINED, // will never happen, something has gone horribly wrong!
+            // extract the time sig itself out the Entry, we need it's methods to work with
+            let time_signature = match &entry {
+                Entry::TimeSignature(time_signature) => time_signature,
+                _ => return JsValue::UNDEFINED, // will never happen, something has gone horribly wrong!
             };
 
             let bar_length = time_signature.ticks_per_bar(flow.subdivisions) as u32;
@@ -236,6 +235,9 @@ impl Engine {
                     None => (),
                 }
             }
+
+            // we are now done with the entry, insert it back in
+            flow.master.insert(entry);
         }
 
         self.update();

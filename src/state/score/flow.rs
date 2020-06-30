@@ -39,7 +39,7 @@ impl Flow {
             0,
             0,
             4,
-            TimeSignatureDrawType::Normal,
+            TimeSignatureDrawType::Hidden,
             None,
         ));
 
