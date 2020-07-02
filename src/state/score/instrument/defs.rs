@@ -124,7 +124,7 @@ lazy_static! {
             InstrumentDef {
                 id: "woodwinds.clarinet.b-flat",
                 path: vec!["Woodwinds", "Clarinet", "B Flat"],
-                long_name: "Clarinet in B@sym:flat:sym@",
+                long_name: "Clarinet in B${flat}",
                 short_name: "Cl",
                 staves: vec![StaveDef {
                     lines: 5,
