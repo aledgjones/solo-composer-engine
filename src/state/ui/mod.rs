@@ -1,5 +1,10 @@
+pub mod play;
+pub mod setup;
+
+use crate::state::ui::play::Play;
+use crate::state::ui::setup::Setup;
 use crate::state::Engine;
-use std::collections::HashMap;
+use crate::utils::duration::NoteDuration;
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
@@ -25,35 +30,20 @@ pub enum Tool {
 }
 
 #[derive(Serialize)]
-pub struct UiPlay {
-    pub zoom: f32,
-    pub keyboard: HashMap<String, u8>,
-    pub tool: Tool,
-}
-
-impl UiPlay {
-    pub fn new() -> Self {
-        Self {
-            zoom: 1.0,
-            keyboard: HashMap::new(),
-            tool: Tool::Select,
-        }
-    }
-}
-
-#[derive(Serialize)]
 pub struct Ui {
     view: View,
-    expanded: HashMap<String, bool>, // expressed in js as object -- perfect for quick lookups
-    play: UiPlay,
+    snap: NoteDuration,
+    setup: Setup,
+    play: Play,
 }
 
 impl Ui {
     pub fn new() -> Ui {
         Ui {
             view: View::Setup,
-            expanded: HashMap::new(),
-            play: UiPlay::new(),
+            snap: NoteDuration::Sixteenth,
+            setup: Setup::new(),
+            play: Play::new(),
         }
     }
 }
@@ -64,28 +54,8 @@ impl Engine {
         self.state.ui.view = value;
         self.emit();
     }
-    pub fn expand(&mut self, key: &str) {
-        self.state.ui.expanded.insert(String::from(key), true);
-        self.emit();
-    }
-    pub fn collapse(&mut self, key: &str) {
-        self.state.ui.expanded.remove(key);
-        self.emit();
-    }
-    pub fn set_play_keyboard(&mut self, key: &str, offset: u8) {
-        self.state
-            .ui
-            .play
-            .keyboard
-            .insert(String::from(key), offset);
-        self.emit();
-    }
-    pub fn set_play_tool(&mut self, value: Tool) {
-        self.state.ui.play.tool = value;
-        self.emit();
-    }
-    pub fn set_play_zoom(&mut self, value: f32) {
-        self.state.ui.play.zoom = value;
+    pub fn set_snap(&mut self, value: NoteDuration) {
+        self.state.ui.snap = value;
         self.emit();
     }
 }

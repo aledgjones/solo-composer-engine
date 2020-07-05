@@ -1,6 +1,3 @@
-use crate::state::score::instrument::defs::get_def;
-use crate::state::score::stave::Stave;
-use crate::state::score::track::Track;
 use crate::state::Engine;
 use crate::utils::shortid;
 use std::collections::HashMap;
@@ -89,19 +86,13 @@ impl Engine {
 
         match self.state.score.players.by_key.get_mut(&player_key) {
             Some(player) => {
-                // push the instrument_key into the player (assignment actually happens here)
                 player.instruments.push(instrument_key.clone());
             }
             None => return JsValue::UNDEFINED,
         };
 
-        // unwrap manually -- we can't just pass back the None to js as it expects a JsValue.
         let instrument = match self.state.score.instruments.get(&instrument_key) {
             Some(instrument) => instrument,
-            None => return JsValue::UNDEFINED,
-        };
-        let instrument_def = match get_def(&instrument.id.as_str()) {
-            Some(instrument_def) => instrument_def,
             None => return JsValue::UNDEFINED,
         };
 
@@ -110,15 +101,7 @@ impl Engine {
             match self.state.score.flows.by_key.get_mut(flow_key) {
                 Some(flow) => {
                     if flow.players.contains(&player_key) {
-                        for (i, stave_key) in instrument.staves.iter().enumerate() {
-                            let track = Track::new();
-                            let mut stave =
-                                Stave::new(stave_key.clone(), &instrument_def.staves[i]);
-                            stave.tracks.push(track.key.clone());
-
-                            flow.tracks.insert(track.key.clone(), track);
-                            flow.staves.insert(stave.key.clone(), stave);
-                        }
+                        flow.add_instrument(instrument);
                     }
                 }
                 None => {} // won't happen but we ignore if it does
@@ -127,6 +110,7 @@ impl Engine {
 
         self.update();
         self.emit();
+
         JsValue::from_str(&player_key)
     }
 

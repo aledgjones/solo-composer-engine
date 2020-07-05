@@ -37,27 +37,44 @@ impl Track {
         self.entries.by_key.insert(entry.key(), entry);
     }
 
+    /// Move an entry to a new tick
+    pub fn r#move(&mut self, key: &str, new_tick: u32) {
+        let entry = match self.entries.by_key.get_mut(key) {
+            Some(entry) => entry,
+            None => return (),
+        };
+
+        let old_tick = entry.tick();
+
+        // move the entry tp the new tick only if it has actually moved
+        if old_tick != new_tick {
+            entry.set_tick(new_tick);
+            // move the entry key to the new tick
+            match self.entries.by_tick.get_mut(&old_tick) {
+                Some(keys) => {
+                    keys.retain(|item| item != key);
+                }
+                None => (),
+            };
+            let tick = self.entries.by_tick.entry(new_tick).or_insert(Vec::new());
+            tick.push(String::from(key));
+        }
+    }
+
     /// remove an entry and return the removed entry
-    pub fn remove(&mut self, tick: &u32, key: &String) -> Option<Entry> {
-        match self.entries.by_tick.get_mut(tick) {
+    pub fn remove(&mut self, key: &str) -> Option<Entry> {
+        let entry = match self.entries.by_key.get(key) {
+            Some(entry) => entry,
+            None => return None,
+        };
+
+        match self.entries.by_tick.get_mut(&entry.tick()) {
             Some(keys) => {
                 keys.retain(|item| item != key);
             }
             None => (),
         };
         self.entries.by_key.remove(key)
-    }
-
-    pub fn r#move(&mut self, old_tick: &u32, new_tick: u32, key: &String) {
-        let entry = self.remove(old_tick, key);
-        let entry = match entry {
-            Some(mut entry) => {
-                entry.set_tick(new_tick);
-                entry
-            }
-            None => return (),
-        };
-        self.insert(entry);
     }
 
     /// Returns the time signature entry at a given tick if it exists

@@ -1,5 +1,7 @@
+use crate::state::entries::clef::Clef;
 use crate::state::entries::time_signature::{TimeSignature, TimeSignatureDrawType};
 use crate::state::score::instrument::defs::get_def;
+use crate::state::score::instrument::Instrument;
 use crate::state::score::stave::Stave;
 use crate::state::score::track::Track;
 use crate::state::Engine;
@@ -27,7 +29,7 @@ impl Flow {
             title: String::from(""),
             players: HashSet::new(),
             length: 4,       // 1 crotchet beat
-            subdivisions: 4, // auto it to semi-quavers
+            subdivisions: 8, // auto it to 32nd notes as this is the shortest snap
 
             master: Track::new(),
             staves: HashMap::new(),
@@ -44,6 +46,27 @@ impl Flow {
         ));
 
         flow
+    }
+
+    pub fn add_instrument(&mut self, instrument: &Instrument) {
+        let def = match get_def(&instrument.id.as_str()) {
+            Some(instrument_def) => instrument_def,
+            None => return (),
+        };
+
+        for (i, stave_key) in instrument.staves.iter().enumerate() {
+            let track = Track::new();
+            let clef = match def.staves.get(i) {
+                Some(def) => Clef::new(shortid(), 0, def.clef_pitch, def.clef_offset),
+                None => return (),
+            };
+
+            let mut stave = Stave::new(stave_key.clone(), &def.staves[i]);
+            stave.master.insert(clef);
+            stave.tracks.push(track.key.clone());
+            self.tracks.insert(track.key.clone(), track);
+            self.staves.insert(stave.key.clone(), stave);
+        }
     }
 }
 
@@ -71,25 +94,15 @@ impl Engine {
         let mut flow = Flow::new();
         let flow_key = flow.key.clone(); // return value
 
-        // add all the players into the new flow
+        // add all the player keys into the new flow
         for player_key in &self.state.score.players.order {
             flow.players.insert(player_key.clone());
         }
 
         // add stave / tracks for each instrument in the score
+        // we do this for every player so we can loop the instruments directly
         for (_instrument_key, instrument) in &self.state.score.instruments {
-            let def = match get_def(&instrument.id.as_str()) {
-                Some(instrument_def) => instrument_def,
-                None => return JsValue::UNDEFINED,
-            };
-
-            for (i, stave_key) in instrument.staves.iter().enumerate() {
-                let track = Track::new();
-                let mut stave = Stave::new(stave_key.clone(), &def.staves[i]);
-                stave.tracks.push(track.key.clone());
-                flow.tracks.insert(track.key.clone(), track);
-                flow.staves.insert(stave.key.clone(), stave);
-            }
+            flow.add_instrument(instrument);
         }
 
         self.state.score.flows.order.push(flow.key.clone());
@@ -146,33 +159,22 @@ impl Engine {
             Some(flow) => flow,
             None => return (),
         };
+
         flow.players.insert(String::from(player_key));
 
         // get all the insturments assigned to the player
         let instrument_keys = match self.state.score.players.by_key.get(player_key) {
-            // we need to clone so instrument_keys isn't a ref to self and so we can use it later
-            Some(player) => player.instruments.clone(),
+            Some(player) => &player.instruments,
             None => return (),
         };
 
         // add staves and tracks to this flow
         for instrument_key in instrument_keys {
-            let instrument = match self.state.score.instruments.get(&instrument_key) {
+            let instrument = match self.state.score.instruments.get(instrument_key) {
                 Some(instrument) => instrument,
                 None => return (),
             };
-            let def = match get_def(&instrument.id.as_str()) {
-                Some(instrument_def) => instrument_def,
-                None => return (),
-            };
-
-            for (i, stave_key) in instrument.staves.iter().enumerate() {
-                let track = Track::new();
-                let mut stave = Stave::new(stave_key.clone(), &def.staves[i]);
-                stave.tracks.push(track.key.clone());
-                flow.tracks.insert(track.key.clone(), track);
-                flow.staves.insert(stave.key.clone(), stave);
-            }
+            flow.add_instrument(instrument);
         }
 
         self.update();
@@ -189,14 +191,13 @@ impl Engine {
 
         // get all the insturments assigned to the player
         let instrument_keys = match self.state.score.players.by_key.get(player_key) {
-            // we need to clone so instrument_keys isn't a ref to self and so we can use it later
-            Some(player) => player.instruments.clone(),
+            Some(player) => &player.instruments,
             None => return (),
         };
 
         // delete staves and tracks in this flow
         for instrument_key in instrument_keys {
-            let stave_keys = match self.state.score.instruments.get(&instrument_key) {
+            let stave_keys = match self.state.score.instruments.get(instrument_key) {
                 Some(instrument) => &instrument.staves,
                 None => return (),
             };

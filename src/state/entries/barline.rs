@@ -1,5 +1,5 @@
 use crate::state::entries::Entry;
-use crate::utils::generic::{BoundingBox, Padding, Spaces};
+use crate::utils::measurements::{BoundingBox, Padding, Spaces};
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
@@ -23,7 +23,7 @@ pub struct Barline {
 
 impl Barline {
     pub fn new(key: String, tick: u32, barline_type: BarlineType) -> Entry {
-        Entry::Barline(Barline {
+        Entry::Barline(Self {
             key,
             tick,
             barline_type,

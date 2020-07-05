@@ -1,6 +1,7 @@
 use crate::state::entries::barline::BarlineType;
-use crate::utils::generic::{Font, Justify, Padding, Spaces, MM};
+use crate::utils::measurements::{Padding, Spaces, MM};
 use crate::utils::shortid;
+use crate::utils::text::{Font, Justify};
 
 #[derive(Serialize_repr)]
 #[repr(u8)]

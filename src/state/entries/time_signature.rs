@@ -1,6 +1,6 @@
 use crate::state::entries::Entry;
 use crate::state::Engine;
-use crate::utils::generic::{BoundingBox, Padding, Spaces};
+use crate::utils::measurements::{BoundingBox, Padding, Spaces};
 use crate::utils::shortid;
 use wasm_bindgen::prelude::*;
 
@@ -40,7 +40,7 @@ impl TimeSignature {
         draw_type: TimeSignatureDrawType,
         groupings: Option<Vec<u8>>,
     ) -> Entry {
-        Entry::TimeSignature(TimeSignature {
+        Entry::TimeSignature(Self {
             key,
             tick,
             beats,
@@ -175,6 +175,7 @@ impl Engine {
     ) -> JsValue {
         // we want to be able to return this at the end
         let key = shortid();
+
         // we need a closure here so that the &mut self used for flow can be released
         // and reused to call update() and emit().
         {
@@ -197,7 +198,7 @@ impl Engine {
 
             match old_key {
                 Some(key) => {
-                    flow.master.remove(&tick, &key);
+                    flow.master.remove(&key);
                 }
                 None => (),
             };
@@ -241,7 +242,7 @@ impl Engine {
                         };
                         match key {
                             Some(key) => {
-                                flow.master.r#move(&i, i + (bar_length - overflow), &key);
+                                flow.master.r#move(&key, i + (bar_length - overflow));
                             }
                             None => (),
                         }

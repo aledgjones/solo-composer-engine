@@ -1,7 +1,10 @@
 extern crate web_sys;
 
-pub mod generic;
+pub mod duration;
+pub mod measurements;
+pub mod pitch;
 pub mod storage;
+pub mod text;
 
 use rand::distributions::Alphanumeric;
 use rand::{thread_rng, Rng};
