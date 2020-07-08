@@ -16,18 +16,19 @@ pub struct Tone {
 }
 
 impl Tone {
-    pub fn new(key: String, tick: u32, duration: u32, pitch: u8) -> Entry {
+    pub fn new(key: String, tick: u32, duration: Duration, pitch: Pitch) -> Entry {
         Entry::Tone(Self {
             key,
             tick,
-            duration: Duration::new(duration),
-            pitch: Pitch::new(pitch, Accidental::default(pitch)),
+            duration,
+            pitch,
         })
     }
 }
 
 #[wasm_bindgen]
 impl Engine {
+    /// Create a tone
     pub fn create_tone(
         &mut self,
         flow_key: &str,
@@ -56,13 +57,20 @@ impl Engine {
         };
 
         // we are now done with the entry, insert it back in
-        track.insert(Tone::new(key.clone(), tick, duration, pitch));
+        track.insert(Tone::new(
+            key.clone(),
+            tick,
+            Duration::new(duration),
+            Pitch::new(pitch, Accidental::default(pitch)),
+        ));
 
         self.update();
         self.emit();
 
         JsValue::from_str(key.as_str())
     }
+
+    /// Update the tone
     pub fn update_tone(
         &mut self,
         flow_key: &str,
@@ -105,6 +113,8 @@ impl Engine {
         self.update();
         self.emit();
     }
+
+    /// Remove the tone
     pub fn remove_tone(&mut self, flow_key: &str, track_key: &str, entry_key: &str) {
         let flow = match self
             .state
@@ -123,6 +133,50 @@ impl Engine {
         };
 
         track.remove(entry_key);
+
+        self.update();
+        self.emit();
+    }
+
+    /// Slice a tone
+    pub fn slice_tone(&mut self, flow_key: &str, track_key: &str, entry_key: &str, slice_at: u32) {
+        let flow = match self
+            .state
+            .score
+            .flows
+            .by_key
+            .get_mut(&String::from(flow_key))
+        {
+            Some(flow) => flow,
+            None => return (),
+        };
+
+        let track = match flow.tracks.get_mut(track_key) {
+            Some(track) => track,
+            None => return (),
+        };
+
+        let old_tone = match track.remove(entry_key) {
+            Some(entry) => match entry {
+                Entry::Tone(tone) => tone,
+                _ => return (),
+            },
+            None => return (),
+        };
+
+        track.insert(Tone::new(
+            old_tone.key,
+            old_tone.tick,
+            Duration::new(slice_at - old_tone.tick),
+            old_tone.pitch.clone(),
+        ));
+
+        track.insert(Tone::new(
+            shortid(),
+            slice_at,
+            Duration::new(old_tone.duration.int - (slice_at - old_tone.tick)),
+            old_tone.pitch.clone(),
+        ));
 
         self.update();
         self.emit();

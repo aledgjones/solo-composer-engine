@@ -105,7 +105,7 @@ impl TimeSignature {
 
     /// Get the number of ticks per an arbitary beat type
     pub fn ticks_per_beat_type(&self, subdivisions: u8, beat_type: u8) -> u8 {
-        subdivisions / (beat_type / 4)
+        (subdivisions as f32 / (beat_type as f32 / 4 as f32)) as u8
     }
 
     // Returns true if the tick is on a beat
