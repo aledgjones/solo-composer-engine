@@ -21,11 +21,16 @@ struct State {
 
 impl State {
     fn new() -> State {
+        let score = Score::new();
+        let flow_key = match score.flows.order.get(0) {
+            Some(key) => key.clone(),
+            None => String::from(""),
+        };
         State {
             app: App::new(),
             playback: Playback::new(),
-            score: Score::new(),
-            ui: Ui::new(),
+            score,
+            ui: Ui::new(flow_key),
         }
     }
 }
@@ -50,7 +55,7 @@ impl Engine {
         JsValue::from_serde(&self.state).unwrap()
     }
 
-    fn emit(&self) {
+    fn emit(&mut self) {
         let this = JsValue::NULL;
         let state = JsValue::from_serde(&self.state).unwrap();
         let _ = self.listener.call1(&this, &state);

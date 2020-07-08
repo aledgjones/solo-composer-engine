@@ -2,6 +2,7 @@ pub mod defs;
 pub mod utils;
 
 use crate::state::score::instrument::defs::get_def;
+use crate::state::score::instrument::utils::calc_counts;
 use crate::state::Engine;
 use crate::utils::shortid;
 use std::collections::HashMap;
@@ -14,8 +15,9 @@ pub struct Instrument {
     pub long_name: String,
     pub short_name: String,
     pub staves: Vec<String>,
+    pub count: Option<u8>,
 
-    pub volume: usize,
+    pub volume: u8,
     pub mute: bool,
     pub solo: bool,
 }
@@ -28,9 +30,7 @@ struct CreateInstrumentReturn {
 
 #[wasm_bindgen]
 impl Engine {
-    /**
-     * Create an instrument
-     */
+    /// Create an instrument
     pub fn create_instrument(&mut self, id: &str) -> JsValue {
         let def = match get_def(&id) {
             Some(def) => def,
@@ -46,7 +46,7 @@ impl Engine {
                 .iter()
                 .map(|_| shortid())
                 .collect::<Vec<String>>(),
-
+            count: None,
             volume: 80,
             mute: false,
             solo: false,
@@ -59,23 +59,29 @@ impl Engine {
             .score
             .instruments
             .insert(instrument.key.clone(), instrument);
+
         self.update();
         self.emit();
+
         JsValue::from_serde(&return_value).unwrap()
     }
 
-    pub fn reorder_instrument(&mut self, player_key: &str, old_index: usize, new_index: usize) {
+    /// Reorder the instruments
+    pub fn reorder_instrument(&mut self, player_key: &str, old_index: u8, new_index: u8) {
         match self.state.score.players.by_key.get_mut(player_key) {
             Some(player) => {
-                let removed = player.instruments.remove(old_index);
-                player.instruments.insert(new_index, removed);
+                let removed = player.instruments.remove(old_index as usize);
+                player.instruments.insert(new_index as usize, removed);
             }
             None => (),
         }
+
+        calc_counts(self);
         self.update();
         self.emit();
     }
 
+    /// Remove an instrument
     pub fn remove_instrument(&mut self, player_key: &str, instrument_key: &str) {
         // remove from the player entry
         match self.state.score.players.by_key.get_mut(player_key) {
@@ -111,6 +117,8 @@ impl Engine {
         }
 
         self.state.score.instruments.remove(instrument_key);
+
+        calc_counts(self);
         self.update();
         self.emit();
     }
@@ -135,7 +143,7 @@ impl Engine {
         self.emit();
     }
 
-    pub fn set_volume_instrument(&mut self, instrument_key: &str, value: usize) {
+    pub fn set_volume_instrument(&mut self, instrument_key: &str, value: u8) {
         match self.state.score.instruments.get_mut(instrument_key) {
             Some(instrument) => {
                 instrument.volume = value;

@@ -1,3 +1,4 @@
+use crate::state::score::instrument::utils::calc_counts;
 use crate::state::Engine;
 use crate::utils::shortid;
 use std::collections::HashMap;
@@ -108,15 +109,22 @@ impl Engine {
             };
         }
 
+        calc_counts(self);
         self.update();
         self.emit();
 
         JsValue::from_str(&player_key)
     }
 
-    pub fn reorder_player(&mut self, old_index: usize, new_index: usize) {
-        let removed = self.state.score.players.order.remove(old_index);
-        self.state.score.players.order.insert(new_index, removed);
+    pub fn reorder_player(&mut self, old_index: u8, new_index: u8) {
+        let removed = self.state.score.players.order.remove(old_index as usize);
+        self.state
+            .score
+            .players
+            .order
+            .insert(new_index as usize, removed);
+
+        calc_counts(self);
         self.update();
         self.emit();
     }
@@ -145,6 +153,7 @@ impl Engine {
         self.state.score.players.by_key.remove(player_key);
         self.state.score.players.order.retain(|e| e != player_key);
 
+        calc_counts(self);
         self.update();
         self.emit();
     }

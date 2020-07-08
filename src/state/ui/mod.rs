@@ -5,6 +5,7 @@ use crate::state::ui::play::Play;
 use crate::state::ui::setup::Setup;
 use crate::state::Engine;
 use crate::utils::duration::NoteDuration;
+use std::collections::HashMap;
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
@@ -31,17 +32,19 @@ pub enum Tool {
 
 #[derive(Serialize)]
 pub struct Ui {
-    view: View,
-    snap: NoteDuration,
-    setup: Setup,
-    play: Play,
+    pub view: View,
+    pub snap: NoteDuration,
+    pub flow_key: String,
+    pub setup: Setup,
+    pub play: Play,
 }
 
 impl Ui {
-    pub fn new() -> Ui {
+    pub fn new(flow_key: String) -> Ui {
         Ui {
             view: View::Setup,
             snap: NoteDuration::Sixteenth,
+            flow_key: flow_key,
             setup: Setup::new(),
             play: Play::new(),
         }
@@ -56,6 +59,10 @@ impl Engine {
     }
     pub fn set_snap(&mut self, value: NoteDuration) {
         self.state.ui.snap = value;
+        self.emit();
+    }
+    pub fn set_flow_key(&mut self, value: &str) {
+        self.state.ui.flow_key = String::from(value);
         self.emit();
     }
 }

@@ -28,7 +28,7 @@ impl Flow {
             key: shortid(),
             title: String::from(""),
             players: HashSet::new(),
-            length: 4,       // 1 crotchet beat
+            length: 8,       // 1 crotchet beat
             subdivisions: 8, // auto it to 32nd notes as this is the shortest snap
 
             master: Track::new(),
@@ -136,9 +136,13 @@ impl Engine {
         self.emit();
     }
 
-    pub fn reorder_flow(&mut self, old_index: usize, new_index: usize) {
-        let removed = self.state.score.flows.order.remove(old_index);
-        self.state.score.flows.order.insert(new_index, removed);
+    pub fn reorder_flow(&mut self, old_index: u8, new_index: u8) {
+        let removed = self.state.score.flows.order.remove(old_index as usize);
+        self.state
+            .score
+            .flows
+            .order
+            .insert(new_index as usize, removed);
         self.update();
         self.emit();
     }
@@ -216,47 +220,6 @@ impl Engine {
         self.update();
         self.emit();
     }
-
-    pub fn ticks(&self, flow_key: &str, zoom: f32) -> JsValue {
-        let crotchet_width = 72.0 * zoom;
-        let mut ticks = TickList {
-            list: Vec::new(),
-            width: 0.0,
-        };
-        let flow = match self.state.score.flows.by_key.get(flow_key) {
-            Some(flow) => flow,
-            None => return JsValue::from_serde(&ticks).unwrap(), // return an empty tick list
-        };
-        let mut result: Option<&TimeSignature> = None;
-
-        for tick in 0..flow.length {
-            match flow.master.get_time_signature_at_tick(tick) {
-                Some(time_signature) => {
-                    result = Some(time_signature);
-                }
-                None => (),
-            };
-
-            let time_signature = match &result {
-                Some(time_signature) => time_signature,
-                None => return JsValue::from_serde(&ticks).unwrap(), // this will never happen so return early if it does
-            };
-
-            let ticks_per_crotchet = time_signature.ticks_per_beat_type(flow.subdivisions, 4);
-            let tick_width = crotchet_width / ticks_per_crotchet as f32;
-
-            ticks.push(Tick {
-                x: ticks.width,
-                width: tick_width,
-                is_beat: time_signature.is_on_beat(tick, flow.subdivisions),
-                is_first_beat: time_signature.is_on_first_beat(tick, flow.subdivisions),
-                is_quaver_beat: time_signature.is_on_beat_type(tick, flow.subdivisions, 8),
-                is_grouping_boundry: time_signature.is_on_grouping_boundry(tick, flow.subdivisions),
-            })
-        }
-
-        JsValue::from_serde(&ticks).unwrap()
-    }
 }
 
 #[derive(Serialize)]
@@ -280,4 +243,47 @@ struct Tick {
     is_first_beat: bool,
     is_quaver_beat: bool,
     is_grouping_boundry: bool,
+}
+
+#[wasm_bindgen]
+pub fn get_ticks(engine: &Engine, flow_key: &str) -> JsValue {
+    let zoom = engine.state.ui.play.zoom;
+    let crotchet_width = 72.0 * zoom;
+    let mut ticks = TickList {
+        list: Vec::new(),
+        width: 0.0,
+    };
+    let flow = match engine.state.score.flows.by_key.get(flow_key) {
+        Some(flow) => flow,
+        None => return JsValue::from_serde(&ticks).unwrap(), // return an empty tick list
+    };
+    let mut result: Option<&TimeSignature> = None;
+
+    for tick in 0..flow.length {
+        match flow.master.get_time_signature_at_tick(tick) {
+            Some(time_signature) => {
+                result = Some(time_signature);
+            }
+            None => (),
+        };
+
+        let time_signature = match &result {
+            Some(time_signature) => time_signature,
+            None => return JsValue::from_serde(&ticks).unwrap(), // this will never happen so return early if it does
+        };
+
+        let ticks_per_crotchet = time_signature.ticks_per_beat_type(flow.subdivisions, 4);
+        let tick_width = crotchet_width / ticks_per_crotchet as f32;
+
+        ticks.push(Tick {
+            x: ticks.width,
+            width: tick_width,
+            is_beat: time_signature.is_on_beat(tick, flow.subdivisions),
+            is_first_beat: time_signature.is_on_first_beat(tick, flow.subdivisions),
+            is_quaver_beat: time_signature.is_on_beat_type(tick, flow.subdivisions, 8),
+            is_grouping_boundry: time_signature.is_on_grouping_boundry(tick, flow.subdivisions),
+        })
+    }
+
+    JsValue::from_serde(&ticks).unwrap()
 }

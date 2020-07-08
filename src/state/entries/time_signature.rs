@@ -176,83 +176,75 @@ impl Engine {
         // we want to be able to return this at the end
         let key = shortid();
 
-        // we need a closure here so that the &mut self used for flow can be released
-        // and reused to call update() and emit().
+        let flow = match self
+            .state
+            .score
+            .flows
+            .by_key
+            .get_mut(&String::from(flow_key))
         {
-            let flow = match self
-                .state
-                .score
-                .flows
-                .by_key
-                .get_mut(&String::from(flow_key))
-            {
-                Some(flow) => flow,
-                None => return JsValue::UNDEFINED,
-            };
+            Some(flow) => flow,
+            None => return JsValue::UNDEFINED,
+        };
 
-            // if there is already a time isg at this tick we remove it
-            let old_key = match flow.master.get_time_signature_at_tick(tick) {
-                Some(time_signature) => Some(time_signature.key.clone()),
-                None => None,
-            };
+        // if there is already a time isg at this tick we remove it
+        let old_key = match flow.master.get_time_signature_at_tick(tick) {
+            Some(time_signature) => Some(time_signature.key.clone()),
+            None => None,
+        };
 
-            match old_key {
-                Some(key) => {
-                    flow.master.remove(&key);
+        match old_key {
+            Some(key) => {
+                flow.master.remove(&key);
+            }
+            None => (),
+        };
+
+        // we insert the new time sig
+        let entry = TimeSignature::new(key.clone(), tick, beats, beat_type, draw_type, groupings);
+
+        // extract the time sig itself out the Entry, we need it's methods to work with
+        let time_signature = match &entry {
+            Entry::TimeSignature(time_signature) => time_signature,
+            _ => return JsValue::UNDEFINED, // will never happen, something has gone horribly wrong!
+        };
+
+        // we want to create full bars when we insert time sigs,
+        // however open time sigs don't have bar lengths in reality so ignore this step
+        match time_signature.kind() {
+            TimeSignatureType::Open => (),
+            _ => {
+                let bar_length = time_signature.ticks_per_bar(flow.subdivisions) as u32;
+
+                // calculate how may ticks we have filled of the last bar before
+                let overflow = match flow.master.get_time_signature_after_tick(tick, flow.length) {
+                    Some(next_time_signature) => (next_time_signature.tick - tick) % bar_length,
+                    None => ((flow.length - tick) % bar_length),
+                };
+
+                if overflow > 0 {
+                    // add aditional ticks to flow length to make full bars
+                    flow.length += bar_length - overflow;
                 }
-                None => (),
-            };
 
-            // we insert the new time sig
-            let entry =
-                TimeSignature::new(key.clone(), tick, beats, beat_type, draw_type, groupings);
-
-            // extract the time sig itself out the Entry, we need it's methods to work with
-            let time_signature = match &entry {
-                Entry::TimeSignature(time_signature) => time_signature,
-                _ => return JsValue::UNDEFINED, // will never happen, something has gone horribly wrong!
-            };
-
-            // we want to create full bars when we insert time sigs,
-            // however open time sigs don't have bar lengths in reality so ignore this step
-            match time_signature.kind() {
-                TimeSignatureType::Open => (),
-                _ => {
-                    let bar_length = time_signature.ticks_per_bar(flow.subdivisions) as u32;
-
-                    // calculate how may ticks we have filled of the last bar before
-                    let overflow = match flow
-                        .master
-                        .get_time_signature_after_tick(tick, flow.length)
-                    {
-                        Some(next_time_signature) => (next_time_signature.tick - tick) % bar_length,
-                        None => ((flow.length - tick) % bar_length),
+                // offset all remaining time sigs by remainder
+                for i in tick + 1..flow.length {
+                    let key = match flow.master.get_time_signature_at_tick(i) {
+                        Some(time_signature) => Some(time_signature.key.clone()),
+                        None => None,
                     };
-
-                    if overflow > 0 {
-                        // add aditional ticks to flow length to make full bars
-                        flow.length += bar_length - overflow;
-                    }
-
-                    // offset all remaining time sigs by remainder
-                    for i in tick + 1..flow.length {
-                        let key = match flow.master.get_time_signature_at_tick(i) {
-                            Some(time_signature) => Some(time_signature.key.clone()),
-                            None => None,
-                        };
-                        match key {
-                            Some(key) => {
-                                flow.master.r#move(&key, i + (bar_length - overflow));
-                            }
-                            None => (),
+                    match key {
+                        Some(key) => {
+                            flow.master.r#move(&key, i + (bar_length - overflow));
                         }
+                        None => (),
                     }
                 }
             }
-
-            // we are now done with the entry, insert it back in
-            flow.master.insert(entry);
         }
+
+        // we are now done with the entry, insert it back in
+        flow.master.insert(entry);
 
         self.update();
         self.emit();
