@@ -22,12 +22,6 @@ pub struct Instrument {
     pub solo: bool,
 }
 
-#[derive(Serialize)]
-struct CreateInstrumentReturn {
-    key: String,
-    patches: HashMap<&'static str, &'static str>,
-}
-
 #[wasm_bindgen]
 impl Engine {
     /// Create an instrument
@@ -51,10 +45,7 @@ impl Engine {
             mute: false,
             solo: false,
         };
-        let return_value = CreateInstrumentReturn {
-            key: instrument.key.clone(),  // return the newly created instrument's key
-            patches: def.patches.clone(), // we are actually going to deal with playback js side
-        };
+        let return_value = instrument.key.clone();
         self.state
             .score
             .instruments

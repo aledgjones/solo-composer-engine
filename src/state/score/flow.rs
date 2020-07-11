@@ -247,8 +247,7 @@ struct Tick {
 
 #[wasm_bindgen]
 pub fn get_ticks(engine: &Engine, flow_key: &str) -> JsValue {
-    let zoom = engine.state.ui.play.zoom;
-    let crotchet_width = 72.0 * zoom;
+    let crotchet_width = 72.0;
     let mut ticks = TickList {
         list: Vec::new(),
         width: 0.0,

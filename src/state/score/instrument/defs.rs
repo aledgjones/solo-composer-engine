@@ -1,9 +1,8 @@
-use crate::utils::pitch::{Accidental, Pitch};
 use std::collections::HashMap;
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
-#[derive(Serialize_repr)]
+#[derive(Serialize_repr, Hash, Eq, PartialEq)]
 #[repr(u8)]
 pub enum Expression {
     Natural,
@@ -11,31 +10,6 @@ pub enum Expression {
     Spiccato,
     Staccato,
     Tremolo,
-}
-
-impl Expression {
-    pub fn to_str(&self) -> &'static str {
-        match self {
-            Expression::Natural => "natural",
-            Expression::Pizzicato => "pizzicato",
-            Expression::Spiccato => "spiccato",
-            Expression::Staccato => "staccato",
-            Expression::Tremolo => "tremolo",
-        }
-    }
-    pub fn from_str(value: &'static str) -> Expression {
-        if value == "pizzicato" {
-            Expression::Natural
-        } else if value == "spiccato" {
-            Expression::Spiccato
-        } else if value == "staccato" {
-            Expression::Staccato
-        } else if value == "tremolo" {
-            Expression::Tremolo
-        } else {
-            Expression::Natural
-        }
-    }
 }
 
 #[derive(Serialize)]
@@ -62,7 +36,7 @@ pub struct InstrumentDef {
     pub long_name: &'static str,
     pub short_name: &'static str,
     pub staves: Vec<StaveDef>,
-    pub patches: HashMap<&'static str, &'static str>,
+    pub patches: HashMap<Expression, &'static str>,
 }
 
 lazy_static! {
@@ -75,7 +49,7 @@ lazy_static! {
                 short_name: "pno",
                 staves: vec![StaveDef::new(5, 67, 6), StaveDef::new(5, 53, 2)],
                 patches: hashmap! {
-                    Expression::Natural.to_str() => "/patchs/piano/natural.json"
+                    Expression::Natural => "/patches/piano/natural.json"
                 },
             },
             InstrumentDef {
@@ -85,10 +59,10 @@ lazy_static! {
                 short_name: "Vln",
                 staves: vec![StaveDef::new(5, 67, 6)],
                 patches: hashmap! {
-                    Expression::Natural.to_str() => "/patches/violin/natural.json",
-                    Expression::Pizzicato.to_str() => "/patches/violin/pizzicato.json",
-                    Expression::Spiccato.to_str() => "/patches/violin/spiccato.json",
-                    Expression::Tremolo.to_str() => "/patches/violin/tremolo.json"
+                    Expression::Natural => "/patches/violin/natural.json",
+                    Expression::Pizzicato => "/patches/violin/pizzicato.json",
+                    Expression::Spiccato => "/patches/violin/spiccato.json",
+                    Expression::Tremolo => "/patches/violin/tremolo.json"
                 },
             },
             InstrumentDef {
@@ -98,9 +72,9 @@ lazy_static! {
                 short_name: "Vla",
                 staves: vec![StaveDef::new(5, 60, 4)],
                 patches: hashmap! {
-                    Expression::Natural.to_str() => "/patches/viola/natural.json",
-                    Expression::Pizzicato.to_str() => "/patches/viola/pizzicato.json",
-                    Expression::Staccato.to_str() => "/patches/viola/staccato.json"
+                    Expression::Natural => "/patches/viola/natural.json",
+                    Expression::Pizzicato => "/patches/viola/pizzicato.json",
+                    Expression::Staccato => "/patches/viola/staccato.json"
                 },
             },
             InstrumentDef {
@@ -110,9 +84,9 @@ lazy_static! {
                 short_name: "Vc",
                 staves: vec![StaveDef::new(5, 53, 2)],
                 patches: hashmap! {
-                    Expression::Natural.to_str() => "/patches/violoncello/natural.json",
-                    Expression::Pizzicato.to_str() => "/patches/violoncello/pizzicato.json",
-                    Expression::Staccato.to_str() => "/patches/violoncello/staccato.json"
+                    Expression::Natural => "/patches/violoncello/natural.json",
+                    Expression::Pizzicato => "/patches/violoncello/pizzicato.json",
+                    Expression::Staccato => "/patches/violoncello/staccato.json"
                 },
             },
             InstrumentDef {
@@ -122,8 +96,8 @@ lazy_static! {
                 short_name: "Cl",
                 staves: vec![StaveDef::new(5, 67, 6)],
                 patches: hashmap! {
-                    Expression::Natural.to_str() => "/patches/clarinet/natural.json",
-                    Expression::Staccato.to_str() => "/patches/clarrinet/staccato.json",
+                    Expression::Natural => "/patches/clarinet/natural.json",
+                    Expression::Staccato => "/patches/clarinet/staccato.json",
                 },
             },
             InstrumentDef {
@@ -133,8 +107,8 @@ lazy_static! {
                 short_name: "Cl",
                 staves: vec![StaveDef::new(5, 67, 6)],
                 patches: hashmap! {
-                    Expression::Natural.to_str() => "/patches/clarinet/natural.json",
-                    Expression::Staccato.to_str() => "/patches/clarrinet/staccato.json",
+                    Expression::Natural => "/patches/clarinet/natural.json",
+                    Expression::Staccato => "/patches/clarinet/staccato.json",
                 },
             },
         ]
@@ -143,4 +117,15 @@ lazy_static! {
 
 pub fn get_def(id: &str) -> Option<&InstrumentDef> {
     INSTRUMENT_DEFS.iter().find(|&def| def.id == id)
+}
+
+/// Get patches for a given id
+#[wasm_bindgen]
+pub fn get_patches(id: &str) -> JsValue {
+    let def = match get_def(id) {
+        Some(def) => def,
+        None => return JsValue::UNDEFINED,
+    };
+
+    JsValue::from_serde(&def.patches).unwrap()
 }

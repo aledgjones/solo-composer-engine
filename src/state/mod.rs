@@ -1,37 +1,18 @@
-mod app;
 mod entries;
-mod playback;
 mod score;
-mod ui;
 
-use crate::state::app::App;
-use crate::state::playback::Playback;
 use crate::state::score::Score;
-use crate::state::ui::Ui;
-
 use wasm_bindgen::prelude::*;
 
 #[derive(Serialize)]
 struct State {
-    app: App,
-    playback: Playback,
     score: Score,
-    ui: Ui,
 }
 
 impl State {
     fn new() -> State {
         let score = Score::new();
-        let flow_key = match score.flows.order.get(0) {
-            Some(key) => key.clone(),
-            None => String::from(""),
-        };
-        State {
-            app: App::new(),
-            playback: Playback::new(),
-            score,
-            ui: Ui::new(flow_key),
-        }
+        State { score }
     }
 }
 
