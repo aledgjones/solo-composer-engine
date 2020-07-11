@@ -1,18 +1,23 @@
 mod entries;
 mod score;
 
+use crate::state::score::flow::TickList;
 use crate::state::score::Score;
+use std::collections::HashMap;
 use wasm_bindgen::prelude::*;
 
 #[derive(Serialize)]
 struct State {
     score: Score,
+    ticks: HashMap<String, TickList>,
 }
 
 impl State {
     fn new() -> State {
-        let score = Score::new();
-        State { score }
+        State {
+            score: Score::new(),
+            ticks: HashMap::new(),
+        }
     }
 }
 

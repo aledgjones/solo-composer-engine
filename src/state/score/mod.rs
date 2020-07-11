@@ -1,6 +1,6 @@
 mod config;
 mod engrave;
-mod flow;
+pub mod flow;
 mod instrument;
 mod meta;
 mod player;

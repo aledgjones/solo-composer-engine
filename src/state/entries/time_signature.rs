@@ -246,6 +246,8 @@ impl Engine {
         // we are now done with the entry, insert it back in
         flow.master.insert(entry);
 
+        self.state.ticks.insert(flow.key.clone(), flow.get_ticks());
+
         self.update();
         self.emit();
 
