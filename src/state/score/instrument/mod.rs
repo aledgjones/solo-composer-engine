@@ -5,7 +5,6 @@ use crate::state::score::instrument::defs::get_def;
 use crate::state::score::instrument::utils::calc_counts;
 use crate::state::Engine;
 use crate::utils::shortid;
-use std::collections::HashMap;
 use wasm_bindgen::prelude::*;
 
 #[derive(Serialize)]
@@ -15,11 +14,7 @@ pub struct Instrument {
     pub long_name: String,
     pub short_name: String,
     pub staves: Vec<String>,
-    pub count: Option<u8>,
-
-    pub volume: u8,
-    pub mute: bool,
-    pub solo: bool,
+    pub count: Option<u8>
 }
 
 #[wasm_bindgen]
@@ -40,10 +35,7 @@ impl Engine {
                 .iter()
                 .map(|_| shortid())
                 .collect::<Vec<String>>(),
-            count: None,
-            volume: 80,
-            mute: false,
-            solo: false,
+            count: None
         };
         let return_value = instrument.key.clone();
         self.state
@@ -111,36 +103,6 @@ impl Engine {
 
         calc_counts(self);
         self.update();
-        self.emit();
-    }
-
-    pub fn toggle_mute_instrument(&mut self, instrument_key: &str) {
-        match self.state.score.instruments.get_mut(instrument_key) {
-            Some(instrument) => {
-                instrument.mute = !instrument.mute;
-            }
-            None => return (),
-        };
-        self.emit();
-    }
-
-    pub fn toggle_solo_instrument(&mut self, instrument_key: &str) {
-        match self.state.score.instruments.get_mut(instrument_key) {
-            Some(instrument) => {
-                instrument.solo = !instrument.solo;
-            }
-            None => return (),
-        };
-        self.emit();
-    }
-
-    pub fn set_volume_instrument(&mut self, instrument_key: &str, value: u8) {
-        match self.state.score.instruments.get_mut(instrument_key) {
-            Some(instrument) => {
-                instrument.volume = value;
-            }
-            None => return (),
-        };
         self.emit();
     }
 }

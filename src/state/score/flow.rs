@@ -101,13 +101,10 @@ pub struct Flows {
 
 impl Flows {
     pub fn new() -> Flows {
-        let flow = Flow::new();
-        let order = vec![flow.key.clone()];
-
-        let mut by_key = HashMap::new();
-        by_key.insert(flow.key.clone(), flow);
-
-        Flows { order, by_key }
+        Flows {
+            order: Vec::new(),
+            by_key: HashMap::new(),
+        }
     }
 }
 

@@ -43,10 +43,20 @@ lazy_static! {
     pub static ref INSTRUMENT_DEFS: Vec<InstrumentDef> = {
         vec![
             InstrumentDef {
-                id: "keyboards.pianoforte",
+                id: "pitched-percussion.marimba",
+                path: vec!["Pitched Percussion", "Marimba"],
+                long_name: "Marimba",
+                short_name: "Mrm.",
+                staves: vec![StaveDef::new(5, 67, 6), StaveDef::new(5, 53, 2)],
+                patches: hashmap! {
+                    Expression::Natural => "/patches/marimba/natural.json"
+                },
+            },
+            InstrumentDef {
+                id: "keyboard.piano",
                 path: vec!["Keyboards", "Piano"],
                 long_name: "Piano",
-                short_name: "pno",
+                short_name: "Pno.",
                 staves: vec![StaveDef::new(5, 67, 6), StaveDef::new(5, 53, 2)],
                 patches: hashmap! {
                     Expression::Natural => "/patches/piano/natural.json"
@@ -56,7 +66,7 @@ lazy_static! {
                 id: "strings.violin",
                 path: vec!["Strings", "Violin"],
                 long_name: "Violin",
-                short_name: "Vln",
+                short_name: "Vln.",
                 staves: vec![StaveDef::new(5, 67, 6)],
                 patches: hashmap! {
                     Expression::Natural => "/patches/violin/natural.json",
@@ -69,7 +79,7 @@ lazy_static! {
                 id: "strings.viola",
                 path: vec!["Strings", "Viola"],
                 long_name: "Viola",
-                short_name: "Vla",
+                short_name: "Vla.",
                 staves: vec![StaveDef::new(5, 60, 4)],
                 patches: hashmap! {
                     Expression::Natural => "/patches/viola/natural.json",
@@ -81,7 +91,7 @@ lazy_static! {
                 id: "strings.violoncello",
                 path: vec!["Strings", "Violoncello"],
                 long_name: "Violoncello",
-                short_name: "Vc",
+                short_name: "Vc.",
                 staves: vec![StaveDef::new(5, 53, 2)],
                 patches: hashmap! {
                     Expression::Natural => "/patches/violoncello/natural.json",
@@ -104,7 +114,7 @@ lazy_static! {
                 id: "woodwinds.clarinet.b-flat",
                 path: vec!["Woodwinds", "Clarinet", "B Flat"],
                 long_name: "Clarinet in B${flat}",
-                short_name: "Cl",
+                short_name: "Cl.",
                 staves: vec![StaveDef::new(5, 67, 6)],
                 patches: hashmap! {
                     Expression::Natural => "/patches/clarinet/natural.json",
