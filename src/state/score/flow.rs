@@ -51,8 +51,8 @@ impl Flow {
             key: shortid(),
             title: String::from(""),
             players: HashSet::new(),
-            length: 8,       // 1 crotchet beat
-            subdivisions: 8, // auto it to 32nd notes as this is the shortest snap
+            length: 8,        // 1 crotchet beat
+            subdivisions: 16, // auto it to 32nd notes as this is the shortest snap
 
             master: Track::new(),
             staves: HashMap::new(),
