@@ -94,8 +94,8 @@ impl TimeSignature {
     }
 
     /// Get the number of ticks per the time signatures bar
-    pub fn ticks_per_bar(&self, subdivisions: u8) -> u8 {
-        self.ticks_per_beat(subdivisions) * self.beats
+    pub fn ticks_per_bar(&self, subdivisions: u8) -> u32 {
+        (self.ticks_per_beat(subdivisions) * self.beats) as u32
     }
 
     /// Get the number of ticks per the time signatures beat type
@@ -123,7 +123,7 @@ impl TimeSignature {
     pub fn is_on_first_beat(&self, tick: u32, subdivisions: u8) -> bool {
         match self.kind() {
             TimeSignatureType::Open => tick == self.tick,
-            _ => ((tick - self.tick) % self.ticks_per_bar(subdivisions) as u32) == 0,
+            _ => (tick - self.tick) % self.ticks_per_bar(subdivisions) == 0,
         }
     }
 
@@ -132,8 +132,8 @@ impl TimeSignature {
         match self.kind() {
             TimeSignatureType::Open => false,
             _ => {
-                let ticks_per_beat = self.ticks_per_beat_type(subdivisions, self.beat_type);
-                let bar_length = (ticks_per_beat * self.beats) as u32;
+                let ticks_per_beat = self.ticks_per_beat(subdivisions);
+                let bar_length = self.ticks_per_bar(subdivisions);
                 let distance_from_first_beat = (tick - self.tick) % bar_length;
 
                 if distance_from_first_beat == 0 {
@@ -252,5 +252,31 @@ impl Engine {
         self.emit();
 
         JsValue::from_str(key.as_str())
+    }
+
+    /// Convert a tick to timestamp
+    pub fn tick_to_timestamp(&self, flow_key: &str, tick: u32) -> JsValue {
+        let flow = match self.state.score.flows.by_key.get(flow_key) {
+            Some(flow) => flow,
+            None => return JsValue::from_str("1:1:0.000"),
+        };
+
+        let ticks = match self.state.ticks.get(flow_key) {
+            Some(ticks) => ticks,
+            None => return JsValue::from_str("1:1:0.000"),
+        };
+
+        let mut bar: u32 = 0;
+        for tick_entry in &ticks.list {
+            if tick_entry.tick > tick {
+                break;
+            } else if tick_entry.is_first_beat {
+                bar = bar + 1;
+            }
+        }
+
+        let timestamp = format!("{}:{}:{}", bar, "1", "0.000");
+
+        JsValue::from_str(&timestamp)
     }
 }

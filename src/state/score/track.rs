@@ -108,4 +108,18 @@ impl Track {
 
         None
     }
+
+    /// Returns the previous time signature entry *on* or *before* a given tick if it exists
+    pub fn get_time_signature_on_or_before_tick(&self, tick: u32) -> Option<&TimeSignature> {
+        // tick + 1 as the top value is not inclusive and we want to include the current tick.
+        // ie 0..5 == 0,1,2,3,4;
+        for i in (0..tick + 1).rev() {
+            match self.get_time_signature_at_tick(i) {
+                Some(time_signature) => return Some(time_signature),
+                None => (),
+            };
+        }
+
+        None
+    }
 }

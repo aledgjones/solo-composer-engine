@@ -10,9 +10,20 @@ use std::collections::{HashMap, HashSet};
 use wasm_bindgen::prelude::*;
 
 #[derive(Serialize)]
+pub struct Tick {
+    pub tick: u32,
+    pub x: f32,
+    pub width: f32,
+    pub is_beat: bool,
+    pub is_first_beat: bool,
+    pub is_quaver_beat: bool,
+    pub is_grouping_boundry: bool,
+}
+
+#[derive(Serialize)]
 pub struct TickList {
-    list: Vec<Tick>,
-    width: f32,
+    pub list: Vec<Tick>,
+    pub width: f32,
 }
 
 impl TickList {
@@ -20,16 +31,6 @@ impl TickList {
         self.width += tick.width;
         self.list.push(tick);
     }
-}
-
-#[derive(Serialize)]
-pub struct Tick {
-    x: f32,
-    width: f32,
-    is_beat: bool,
-    is_first_beat: bool,
-    is_quaver_beat: bool,
-    is_grouping_boundry: bool,
 }
 
 #[derive(Serialize)]
@@ -90,6 +91,48 @@ impl Flow {
             self.tracks.insert(track.key.clone(), track);
             self.staves.insert(stave.key.clone(), stave);
         }
+    }
+}
+
+impl Flow {
+    pub fn get_ticks(&self) -> TickList {
+        let crotchet_width = 72.0;
+        let mut ticks = TickList {
+            list: Vec::new(),
+            width: 0.0,
+        };
+
+        let mut result: Option<&TimeSignature> = None;
+
+        // FIXME: length seems to be wrong here.
+        for tick in 0..self.length {
+            match self.master.get_time_signature_at_tick(tick) {
+                Some(time_signature) => {
+                    result = Some(time_signature);
+                }
+                None => (),
+            };
+
+            let time_signature = match result {
+                Some(time_signature) => time_signature,
+                None => return ticks, // this will never happen so return early if it does
+            };
+
+            let ticks_per_crotchet = time_signature.ticks_per_beat_type(self.subdivisions, 4);
+            let tick_width = crotchet_width / ticks_per_crotchet as f32;
+
+            ticks.push(Tick {
+                tick,
+                x: ticks.width,
+                width: tick_width,
+                is_beat: time_signature.is_on_beat(tick, self.subdivisions),
+                is_first_beat: time_signature.is_on_first_beat(tick, self.subdivisions),
+                is_quaver_beat: time_signature.is_on_beat_type(tick, self.subdivisions, 8),
+                is_grouping_boundry: time_signature.is_on_grouping_boundry(tick, self.subdivisions),
+            });
+        }
+
+        ticks
     }
 }
 
@@ -242,45 +285,5 @@ impl Engine {
 
         self.update();
         self.emit();
-    }
-}
-
-impl Flow {
-    pub fn get_ticks(&self) -> TickList {
-        let crotchet_width = 72.0;
-        let mut ticks = TickList {
-            list: Vec::new(),
-            width: 0.0,
-        };
-
-        let mut result: Option<&TimeSignature> = None;
-
-        for tick in 0..self.length {
-            match self.master.get_time_signature_at_tick(tick) {
-                Some(time_signature) => {
-                    result = Some(time_signature);
-                }
-                None => (),
-            };
-
-            let time_signature = match &result {
-                Some(time_signature) => time_signature,
-                None => return ticks, // this will never happen so return early if it does
-            };
-
-            let ticks_per_crotchet = time_signature.ticks_per_beat_type(self.subdivisions, 4);
-            let tick_width = crotchet_width / ticks_per_crotchet as f32;
-
-            ticks.push(Tick {
-                x: ticks.width,
-                width: tick_width,
-                is_beat: time_signature.is_on_beat(tick, self.subdivisions),
-                is_first_beat: time_signature.is_on_first_beat(tick, self.subdivisions),
-                is_quaver_beat: time_signature.is_on_beat_type(tick, self.subdivisions, 8),
-                is_grouping_boundry: time_signature.is_on_grouping_boundry(tick, self.subdivisions),
-            })
-        }
-
-        ticks
     }
 }
