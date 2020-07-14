@@ -52,7 +52,7 @@ impl Flow {
             key: shortid(),
             title: String::from(""),
             players: HashSet::new(),
-            length: 8,        // 1 crotchet beat
+            length: 16,       // 1 crotchet beat
             subdivisions: 16, // auto it to 32nd notes as this is the shortest snap
 
             master: Track::new(),
@@ -65,7 +65,7 @@ impl Flow {
             0,
             0,
             4,
-            TimeSignatureDrawType::Hidden,
+            TimeSignatureDrawType::Hidden, // a sort of fake time signature shown as hidden
             None,
         ));
 
@@ -92,9 +92,7 @@ impl Flow {
             self.staves.insert(stave.key.clone(), stave);
         }
     }
-}
 
-impl Flow {
     pub fn get_ticks(&self) -> TickList {
         let crotchet_width = 72.0;
         let mut ticks = TickList {
@@ -104,7 +102,6 @@ impl Flow {
 
         let mut result: Option<&TimeSignature> = None;
 
-        // FIXME: length seems to be wrong here.
         for tick in 0..self.length {
             match self.master.get_time_signature_at_tick(tick) {
                 Some(time_signature) => {

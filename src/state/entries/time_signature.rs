@@ -275,7 +275,25 @@ impl Engine {
             }
         }
 
-        let timestamp = format!("{}:{}:{}", bar, "1", "0.000");
+        let time_signature = match flow.master.get_time_signature_on_or_before_tick(tick) {
+            Some(time_signature) => time_signature,
+            None => return JsValue::from_str("1:1:0.000"),
+        };
+
+        // It's standard by the loks of it for timestamps to be in crotchet beats for some reason,
+        // even if the time signature isn't. who'd have thunk it?
+        let ticks_per_beat = time_signature.ticks_per_beat_type(flow.subdivisions, 4);
+        let distance_from_barline =
+            (tick - time_signature.tick) % time_signature.ticks_per_bar(flow.subdivisions);
+
+        let beat =
+            (f64::from(distance_from_barline) / f64::from(ticks_per_beat)).floor() as u32 + 1;
+
+        let ticks_per_sixteenth = time_signature.ticks_per_beat_type(flow.subdivisions, 16);
+        let sixteenth = f64::from(distance_from_barline % u32::from(ticks_per_beat))
+            / f64::from(ticks_per_sixteenth);
+
+        let timestamp = format!("{}:{}:{:.3}", bar, beat, sixteenth);
 
         JsValue::from_str(&timestamp)
     }
