@@ -26,5 +26,3 @@ impl Duration {
         Self { int }
     }
 }
-
-// TODO: functions that return duration in seconds based on tempo

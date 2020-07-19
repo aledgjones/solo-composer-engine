@@ -3,6 +3,7 @@ use crate::state::Engine;
 use crate::utils::duration::Duration;
 use crate::utils::pitch::{Accidental, Pitch};
 use crate::utils::shortid;
+use crate::utils::velocity::Velocity;
 use wasm_bindgen::prelude::*;
 
 /// These represent the audiable tones of the music.
@@ -13,15 +14,23 @@ pub struct Tone {
     pub tick: u32,
     pub duration: Duration,
     pub pitch: Pitch, // the pitch that the clef sits on
+    pub velocity: Velocity,
 }
 
 impl Tone {
-    pub fn new(key: String, tick: u32, duration: Duration, pitch: Pitch) -> Entry {
+    pub fn new(
+        key: String,
+        tick: u32,
+        duration: Duration,
+        pitch: Pitch,
+        velocity: Velocity,
+    ) -> Entry {
         Entry::Tone(Self {
             key,
             tick,
             duration,
             pitch,
+            velocity,
         })
     }
 }
@@ -36,6 +45,7 @@ impl Engine {
         tick: u32,
         duration: u32,
         pitch: u8,
+        velocity: u8,
     ) -> JsValue {
         // we want to be able to return this at the end
         let key = shortid();
@@ -62,6 +72,7 @@ impl Engine {
             tick,
             Duration::new(duration),
             Pitch::new(pitch, Accidental::default(pitch)),
+            Velocity::new(velocity),
         ));
 
         self.update();
@@ -169,6 +180,7 @@ impl Engine {
             old_tone.tick,
             Duration::new(slice_at - old_tone.tick),
             old_tone.pitch.clone(),
+            old_tone.velocity.clone(),
         ));
 
         track.insert(Tone::new(
@@ -176,6 +188,7 @@ impl Engine {
             slice_at,
             Duration::new(old_tone.duration.int - (slice_at - old_tone.tick)),
             old_tone.pitch.clone(),
+            old_tone.velocity.clone(),
         ));
 
         self.update();

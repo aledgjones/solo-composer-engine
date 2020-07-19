@@ -5,6 +5,7 @@ pub mod measurements;
 pub mod pitch;
 pub mod storage;
 pub mod text;
+pub mod velocity;
 
 use rand::distributions::Alphanumeric;
 use rand::{thread_rng, Rng};
