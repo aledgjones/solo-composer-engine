@@ -4,13 +4,41 @@ use wasm_bindgen::prelude::*;
 #[derive(Serialize_repr)]
 #[repr(u8)]
 pub enum NoteDuration {
-    Double,
     Whole,
     Half,
     Quarter,
     Eighth,
     Sixteenth,
     ThirtySecond,
+}
+
+impl NoteDuration {
+    pub fn to_int(&self) -> u8 {
+        match self {
+            NoteDuration::Whole => 1,
+            NoteDuration::Half => 2,
+            NoteDuration::Quarter => 4,
+            NoteDuration::Eighth => 8,
+            NoteDuration::Sixteenth => 16,
+            NoteDuration::ThirtySecond => 32,
+        }
+    }
+
+    pub fn to_ticks(&self, subdivisions: u8) -> u8 {
+        let beat_type = self.to_int();
+        (subdivisions as f32 / (beat_type as f32 / 4 as f32)) as u8
+    }
+
+    pub fn to_glyph(&self) -> &str {
+        match self {
+            NoteDuration::Whole => "\u{1D15D}",
+            NoteDuration::Half => "\u{1D15E}",
+            NoteDuration::Quarter => "\u{1D15F}",
+            NoteDuration::Eighth => "\u{1D160}",
+            NoteDuration::Sixteenth => "\u{1D161}",
+            NoteDuration::ThirtySecond => "\u{1D162}",
+        }
+    }
 }
 
 #[derive(Serialize)]

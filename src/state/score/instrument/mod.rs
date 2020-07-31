@@ -14,7 +14,7 @@ pub struct Instrument {
     pub long_name: String,
     pub short_name: String,
     pub staves: Vec<String>,
-    pub count: Option<u8>
+    pub count: Option<u8>,
 }
 
 #[wasm_bindgen]
@@ -35,11 +35,10 @@ impl Engine {
                 .iter()
                 .map(|_| shortid())
                 .collect::<Vec<String>>(),
-            count: None
+            count: None,
         };
         let return_value = instrument.key.clone();
         self.state
-            .score
             .instruments
             .insert(instrument.key.clone(), instrument);
 
@@ -51,7 +50,7 @@ impl Engine {
 
     /// Reorder the instruments
     pub fn reorder_instrument(&mut self, player_key: &str, old_index: u8, new_index: u8) {
-        match self.state.score.players.by_key.get_mut(player_key) {
+        match self.state.players.by_key.get_mut(player_key) {
             Some(player) => {
                 let removed = player.instruments.remove(old_index as usize);
                 player.instruments.insert(new_index as usize, removed);
@@ -67,20 +66,20 @@ impl Engine {
     /// Remove an instrument
     pub fn remove_instrument(&mut self, player_key: &str, instrument_key: &str) {
         // remove from the player entry
-        match self.state.score.players.by_key.get_mut(player_key) {
+        match self.state.players.by_key.get_mut(player_key) {
             Some(player) => {
                 player.instruments.retain(|e| e != instrument_key);
             }
             None => (),
         };
 
-        let stave_keys = match self.state.score.instruments.get(instrument_key) {
+        let stave_keys = match self.state.instruments.get(instrument_key) {
             Some(instrument) => &instrument.staves,
             None => return (),
         };
 
-        for flow_key in &self.state.score.flows.order {
-            let flow = match self.state.score.flows.by_key.get_mut(flow_key) {
+        for flow_key in &self.state.flows.order {
+            let flow = match self.state.flows.by_key.get_mut(flow_key) {
                 Some(flow) => flow,
                 None => return (),
             };
@@ -99,7 +98,7 @@ impl Engine {
             }
         }
 
-        self.state.score.instruments.remove(instrument_key);
+        self.state.instruments.remove(instrument_key);
 
         calc_counts(self);
         self.update();

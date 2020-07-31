@@ -50,13 +50,7 @@ impl Engine {
         // we want to be able to return this at the end
         let key = shortid();
 
-        let flow = match self
-            .state
-            .score
-            .flows
-            .by_key
-            .get_mut(&String::from(flow_key))
-        {
+        let flow = match self.state.flows.by_key.get_mut(&String::from(flow_key)) {
             Some(flow) => flow,
             None => return JsValue::UNDEFINED,
         };
@@ -91,13 +85,7 @@ impl Engine {
         duration: u32,
         pitch: u8,
     ) {
-        let flow = match self
-            .state
-            .score
-            .flows
-            .by_key
-            .get_mut(&String::from(flow_key))
-        {
+        let flow = match self.state.flows.by_key.get_mut(&String::from(flow_key)) {
             Some(flow) => flow,
             None => return (),
         };
@@ -127,13 +115,7 @@ impl Engine {
 
     /// Remove the tone
     pub fn remove_tone(&mut self, flow_key: &str, track_key: &str, entry_key: &str) {
-        let flow = match self
-            .state
-            .score
-            .flows
-            .by_key
-            .get_mut(&String::from(flow_key))
-        {
+        let flow = match self.state.flows.by_key.get_mut(&String::from(flow_key)) {
             Some(flow) => flow,
             None => return (),
         };
@@ -151,13 +133,7 @@ impl Engine {
 
     /// Slice a tone
     pub fn slice_tone(&mut self, flow_key: &str, track_key: &str, entry_key: &str, slice_at: u32) {
-        let flow = match self
-            .state
-            .score
-            .flows
-            .by_key
-            .get_mut(&String::from(flow_key))
-        {
+        let flow = match self.state.flows.by_key.get_mut(&String::from(flow_key)) {
             Some(flow) => flow,
             None => return (),
         };

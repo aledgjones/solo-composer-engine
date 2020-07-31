@@ -1,8 +1,10 @@
+pub mod absolute_tempo;
 pub mod barline;
 pub mod clef;
 pub mod time_signature;
 pub mod tone;
 
+use absolute_tempo::AbsoluteTempo;
 use barline::Barline;
 use clef::Clef;
 use time_signature::TimeSignature;
@@ -14,6 +16,7 @@ pub enum Entry {
     Clef(Clef),
     TimeSignature(TimeSignature),
     Tone(Tone),
+    AbsoluteTempo(AbsoluteTempo),
 }
 
 impl Entry {
@@ -24,6 +27,7 @@ impl Entry {
             Entry::Clef(clef) => clef.key.clone(),
             Entry::TimeSignature(time_signature) => time_signature.key.clone(),
             Entry::Tone(tone) => tone.key.clone(),
+            Entry::AbsoluteTempo(tempo) => tempo.key.clone(),
         }
     }
 
@@ -34,6 +38,7 @@ impl Entry {
             Entry::Clef(clef) => clef.tick,
             Entry::TimeSignature(time_signature) => time_signature.tick,
             Entry::Tone(tone) => tone.tick,
+            Entry::AbsoluteTempo(tempo) => tempo.tick,
         }
     }
 
@@ -47,6 +52,7 @@ impl Entry {
             Entry::Clef(clef) => clef.tick = tick,
             Entry::TimeSignature(time_signature) => time_signature.tick = tick,
             Entry::Tone(tone) => tone.tick = tick,
+            Entry::AbsoluteTempo(tempo) => tempo.tick = tick,
         }
     }
 }

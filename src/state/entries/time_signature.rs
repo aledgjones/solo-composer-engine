@@ -1,5 +1,6 @@
 use crate::state::entries::Entry;
 use crate::state::Engine;
+use crate::utils::duration::NoteDuration;
 use crate::utils::measurements::{BoundingBox, Padding, Spaces};
 use crate::utils::shortid;
 use wasm_bindgen::prelude::*;
@@ -21,12 +22,12 @@ pub enum TimeSignatureDrawType {
     SplitCommonTime, // '¢'
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Serialize)]
 pub struct TimeSignature {
     pub key: String,
     pub tick: u32,
     pub beats: u8,
-    pub beat_type: u8,
+    pub beat_type: NoteDuration,
     pub draw_type: TimeSignatureDrawType,
     pub groupings: Vec<u8>, // optional, we can always revert to defaults
 }
@@ -36,7 +37,7 @@ impl TimeSignature {
         key: String,
         tick: u32,
         beats: u8,
-        beat_type: u8,
+        beat_type: NoteDuration,
         draw_type: TimeSignatureDrawType,
         groupings: Option<Vec<u8>>,
     ) -> Entry {
@@ -100,22 +101,24 @@ impl TimeSignature {
 
     /// Get the number of ticks per the time signatures beat type
     pub fn ticks_per_beat(&self, subdivisions: u8) -> u8 {
-        self.ticks_per_beat_type(subdivisions, self.beat_type)
+        self.beat_type.to_ticks(subdivisions)
     }
 
-    /// Get the number of ticks per an arbitary beat type
-    pub fn ticks_per_beat_type(&self, subdivisions: u8, beat_type: u8) -> u8 {
-        (subdivisions as f32 / (beat_type as f32 / 4 as f32)) as u8
+    pub fn distance_from_barline(&self, tick: u32, subdivisions: u8) -> u32 {
+        match self.kind() {
+            TimeSignatureType::Open => tick - self.tick,
+            _ => (tick - self.tick) % self.ticks_per_bar(subdivisions),
+        }
     }
 
     // Returns true if the tick is on a beat
     pub fn is_on_beat(&self, tick: u32, subdivisions: u8) -> bool {
-        self.is_on_beat_type(tick, subdivisions, self.beat_type)
+        self.is_on_beat_type(tick, subdivisions, &self.beat_type)
     }
 
     /// Return true if a tick is on an arbitrary beat type
-    pub fn is_on_beat_type(&self, tick: u32, subdivisions: u8, beat_type: u8) -> bool {
-        let ticks_per_beat = self.ticks_per_beat_type(subdivisions, beat_type) as u32;
+    pub fn is_on_beat_type(&self, tick: u32, subdivisions: u8, beat_type: &NoteDuration) -> bool {
+        let ticks_per_beat = beat_type.to_ticks(subdivisions) as u32;
         ((tick - self.tick) % ticks_per_beat) == 0
     }
 
@@ -123,7 +126,7 @@ impl TimeSignature {
     pub fn is_on_first_beat(&self, tick: u32, subdivisions: u8) -> bool {
         match self.kind() {
             TimeSignatureType::Open => tick == self.tick,
-            _ => (tick - self.tick) % self.ticks_per_bar(subdivisions) == 0,
+            _ => self.distance_from_barline(tick, subdivisions) == 0,
         }
     }
 
@@ -169,20 +172,14 @@ impl Engine {
         flow_key: &str,
         tick: u32,
         beats: u8,
-        beat_type: u8,
+        beat_type: NoteDuration,
         draw_type: TimeSignatureDrawType,
         groupings: Option<Vec<u8>>,
     ) -> JsValue {
         // we want to be able to return this at the end
         let key = shortid();
 
-        let flow = match self
-            .state
-            .score
-            .flows
-            .by_key
-            .get_mut(&String::from(flow_key))
-        {
+        let flow = match self.state.flows.by_key.get_mut(&String::from(flow_key)) {
             Some(flow) => flow,
             None => return JsValue::UNDEFINED,
         };
@@ -246,8 +243,6 @@ impl Engine {
         // we are now done with the entry, insert it back in
         flow.master.insert(entry);
 
-        self.state.ticks.insert(flow.key.clone(), flow.get_ticks());
-
         self.update();
         self.emit();
 
@@ -256,15 +251,12 @@ impl Engine {
 
     /// Convert a tick to timestamp
     pub fn tick_to_timestamp(&self, flow_key: &str, tick: u32) -> JsValue {
-        let flow = match self.state.score.flows.by_key.get(flow_key) {
+        let flow = match self.state.flows.by_key.get(flow_key) {
             Some(flow) => flow,
             None => return JsValue::from_str("1:1:0.000"),
         };
 
-        let ticks = match self.state.ticks.get(flow_key) {
-            Some(ticks) => ticks,
-            None => return JsValue::from_str("1:1:0.000"),
-        };
+        let ticks = flow.get_ticks();
 
         let mut bar: u32 = 0;
         for tick_entry in &ticks.list {
@@ -280,17 +272,16 @@ impl Engine {
             None => return JsValue::from_str("1:1:0.000"),
         };
 
-        // It's standard by the loks of it for timestamps to be in crotchet beats for some reason,
+        // It's standard by the looks of it for timestamps to be in crotchet beats for some reason,
         // even if the time signature isn't. who'd have thunk it?
-        let ticks_per_beat = time_signature.ticks_per_beat_type(flow.subdivisions, 4);
-        let distance_from_barline =
-            (tick - time_signature.tick) % time_signature.ticks_per_bar(flow.subdivisions);
+        let ticks_per_quarter = NoteDuration::Quarter.to_ticks(flow.subdivisions);
+        let distance_from_barline = time_signature.distance_from_barline(tick, flow.subdivisions);
 
         let beat =
-            (f64::from(distance_from_barline) / f64::from(ticks_per_beat)).floor() as u32 + 1;
+            (f64::from(distance_from_barline) / f64::from(ticks_per_quarter)).floor() as u32 + 1;
 
-        let ticks_per_sixteenth = time_signature.ticks_per_beat_type(flow.subdivisions, 16);
-        let sixteenth = f64::from(distance_from_barline % u32::from(ticks_per_beat))
+        let ticks_per_sixteenth = NoteDuration::Sixteenth.to_ticks(flow.subdivisions);
+        let sixteenth = f64::from(distance_from_barline % u32::from(ticks_per_quarter))
             / f64::from(ticks_per_sixteenth);
 
         let timestamp = format!("{}:{}:{:.3}", bar, beat, sixteenth);

@@ -1,3 +1,4 @@
+use crate::state::entries::absolute_tempo::AbsoluteTempo;
 use crate::state::entries::time_signature::TimeSignature;
 use crate::state::entries::Entry;
 use crate::utils::shortid;
@@ -118,6 +119,26 @@ impl Track {
                 Some(time_signature) => return Some(time_signature),
                 None => (),
             };
+        }
+
+        None
+    }
+
+    /// Returns the time signature entry at a given tick if it exists
+    pub fn get_absolute_tempo_at_tick(&self, tick: u32) -> Option<&AbsoluteTempo> {
+        let entry_keys = match self.entries.by_tick.get(&tick) {
+            Some(entries) => entries,
+            None => return None,
+        };
+
+        for key in entry_keys.iter() {
+            match self.entries.by_key.get(key) {
+                Some(entry) => match entry {
+                    Entry::AbsoluteTempo(tempo) => return Some(tempo),
+                    _ => (),
+                },
+                None => (),
+            }
         }
 
         None

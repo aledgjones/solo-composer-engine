@@ -32,32 +32,32 @@ impl Meta {
 #[wasm_bindgen]
 impl Engine {
     pub fn set_title(&mut self, value: String) {
-        self.state.score.meta.title = value;
+        self.state.meta.title = value;
         self.update();
         self.emit();
     }
     pub fn set_subtitle(&mut self, value: String) {
-        self.state.score.meta.subtitle = value;
+        self.state.meta.subtitle = value;
         self.update();
         self.emit();
     }
     pub fn set_composer(&mut self, value: String) {
-        self.state.score.meta.composer = value;
+        self.state.meta.composer = value;
         self.update();
         self.emit();
     }
     pub fn set_arranger(&mut self, value: String) {
-        self.state.score.meta.arranger = value;
+        self.state.meta.arranger = value;
         self.update();
         self.emit();
     }
     pub fn set_lyricist(&mut self, value: String) {
-        self.state.score.meta.lyricist = value;
+        self.state.meta.lyricist = value;
         self.update();
         self.emit();
     }
     pub fn set_copyright(&mut self, value: String) {
-        self.state.score.meta.copyright = value;
+        self.state.meta.copyright = value;
         self.update();
         self.emit();
     }
