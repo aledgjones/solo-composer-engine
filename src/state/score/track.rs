@@ -4,13 +4,13 @@ use crate::state::entries::Entry;
 use crate::utils::shortid;
 use std::collections::HashMap;
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
 pub struct Entries {
     pub by_tick: HashMap<u32, Vec<String>>,
     pub by_key: HashMap<String, Entry>, // we can iterate the hashmap directly, so no order/by_key needed
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
 pub struct Track {
     pub key: String,
     pub entries: Entries,

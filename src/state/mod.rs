@@ -26,6 +26,11 @@ impl Engine {
         JsValue::from_serde(&self.state).unwrap()
     }
 
+    pub fn set(&mut self, state: JsValue) {
+        self.state = state.into_serde().unwrap();
+        self.emit();
+    }
+
     fn emit(&self) {
         let this = JsValue::NULL;
         let state = JsValue::from_serde(&self.state).unwrap();

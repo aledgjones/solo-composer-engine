@@ -1,4 +1,4 @@
-#[derive(Serialize, Clone)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct Velocity {
     int: u8,
 }

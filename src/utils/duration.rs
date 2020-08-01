@@ -1,7 +1,7 @@
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
-#[derive(Serialize_repr)]
+#[derive(Serialize_repr, Deserialize_repr)]
 #[repr(u8)]
 pub enum NoteDuration {
     Whole,
@@ -41,7 +41,7 @@ impl NoteDuration {
     }
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
 pub struct Duration {
     // number of ticks in the duration
     pub int: u32,

@@ -2,7 +2,7 @@ use crate::state::Engine;
 use js_sys::Date;
 use wasm_bindgen::prelude::*;
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
 pub struct Meta {
     pub title: String,
     pub subtitle: String,
@@ -27,38 +27,42 @@ impl Meta {
             modified: Date::now(),
         }
     }
+
+    pub fn set_modified(&mut self) {
+        self.modified = Date::now();
+    }
 }
 
 #[wasm_bindgen]
 impl Engine {
     pub fn set_title(&mut self, value: String) {
         self.state.meta.title = value;
-        self.update();
+        self.state.meta.set_modified();
         self.emit();
     }
     pub fn set_subtitle(&mut self, value: String) {
         self.state.meta.subtitle = value;
-        self.update();
+        self.state.meta.set_modified();
         self.emit();
     }
     pub fn set_composer(&mut self, value: String) {
         self.state.meta.composer = value;
-        self.update();
+        self.state.meta.set_modified();
         self.emit();
     }
     pub fn set_arranger(&mut self, value: String) {
         self.state.meta.arranger = value;
-        self.update();
+        self.state.meta.set_modified();
         self.emit();
     }
     pub fn set_lyricist(&mut self, value: String) {
         self.state.meta.lyricist = value;
-        self.update();
+        self.state.meta.set_modified();
         self.emit();
     }
     pub fn set_copyright(&mut self, value: String) {
         self.state.meta.copyright = value;
-        self.update();
+        self.state.meta.set_modified();
         self.emit();
     }
 }

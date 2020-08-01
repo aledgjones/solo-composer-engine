@@ -7,7 +7,7 @@ use crate::state::Engine;
 use crate::utils::shortid;
 use wasm_bindgen::prelude::*;
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
 pub struct Instrument {
     pub key: String,
     pub id: String,
@@ -42,7 +42,7 @@ impl Engine {
             .instruments
             .insert(instrument.key.clone(), instrument);
 
-        self.update();
+        self.state.meta.set_modified();
         self.emit();
 
         JsValue::from_serde(&return_value).unwrap()
@@ -59,7 +59,7 @@ impl Engine {
         }
 
         calc_counts(self);
-        self.update();
+        self.state.meta.set_modified();
         self.emit();
     }
 
@@ -101,7 +101,7 @@ impl Engine {
         self.state.instruments.remove(instrument_key);
 
         calc_counts(self);
-        self.update();
+        self.state.meta.set_modified();
         self.emit();
     }
 }

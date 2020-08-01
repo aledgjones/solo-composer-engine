@@ -1,7 +1,7 @@
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
-#[derive(Serialize_repr, Clone)]
+#[derive(Serialize_repr, Deserialize_repr, Clone)]
 #[repr(u8)]
 pub enum Accidental {
     DoubleSharp,
@@ -34,7 +34,7 @@ impl Accidental {
     }
 }
 
-#[derive(Serialize, Clone)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct Pitch {
     // the midi number
     pub int: u8,
@@ -100,11 +100,4 @@ impl Pitch {
         let a: f64 = 440.0;
         (a / 32.0) * ((2.0 as f64).powf((self.int as f64 - 9.0) / 12.0))
     }
-}
-
-#[wasm_bindgen]
-pub fn pitch_to_frequency(int: u8) -> JsValue {
-    let pitch = Pitch::new(int, Accidental::default(int));
-    let frequency = pitch.to_frequency();
-    JsValue::from_f64(frequency)
 }

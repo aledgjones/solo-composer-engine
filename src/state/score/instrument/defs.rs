@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
-#[derive(Serialize_repr, Hash, Eq, PartialEq)]
+#[derive(Serialize_repr, Deserialize_repr, Hash, Eq, PartialEq)]
 #[repr(u8)]
 pub enum Expression {
     Natural,
@@ -10,10 +10,10 @@ pub enum Expression {
     Spiccato,
     Staccato,
     Tremolo,
-    Mute // may have to convert to MuteStaccato etc. later for mixed expressions
+    Mute, // may have to convert to MuteStaccato etc. later for mixed expressions
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
 pub struct StaveDef {
     pub lines: u8,
     pub clef_pitch: u8, // these are the default clef for the instrument track
@@ -30,7 +30,7 @@ impl StaveDef {
     }
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
 pub struct InstrumentDef {
     pub id: &'static str,
     pub path: Vec<&'static str>,
@@ -348,7 +348,7 @@ lazy_static! {
                     Expression::Natural => "/patches/piccolo/natural.json",
                     Expression::Staccato => "/patches/piccolo/staccato.json",
                 },
-            }
+            },
         ]
     };
 }

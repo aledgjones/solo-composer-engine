@@ -5,14 +5,14 @@ use std::collections::HashMap;
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
-#[derive(Serialize_repr)]
+#[derive(Serialize_repr, Deserialize_repr)]
 #[repr(u8)]
 pub enum PlayerType {
     Solo,
     Section,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
 pub struct Player {
     pub key: String,
     pub player_type: PlayerType,
@@ -32,7 +32,7 @@ impl Player {
     }
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
 pub struct Players {
     pub order: Vec<String>,
     pub by_key: HashMap<String, Player>,
@@ -68,7 +68,7 @@ impl Engine {
 
         self.state.players.by_key.insert(player.key.clone(), player);
 
-        self.update();
+        self.state.meta.set_modified();
         self.emit();
 
         returner
@@ -106,7 +106,7 @@ impl Engine {
         }
 
         calc_counts(self);
-        self.update();
+        self.state.meta.set_modified();
         self.emit();
 
         JsValue::from_str(&player_key)
@@ -117,7 +117,7 @@ impl Engine {
         self.state.players.order.insert(new_index as usize, removed);
 
         calc_counts(self);
-        self.update();
+        self.state.meta.set_modified();
         self.emit();
     }
 
@@ -146,7 +146,7 @@ impl Engine {
         self.state.players.order.retain(|e| e != player_key);
 
         calc_counts(self);
-        self.update();
+        self.state.meta.set_modified();
         self.emit();
     }
 }

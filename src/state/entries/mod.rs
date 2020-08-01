@@ -10,7 +10,7 @@ use clef::Clef;
 use time_signature::TimeSignature;
 use tone::Tone;
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
 pub enum Entry {
     Barline(Barline),
     Clef(Clef),

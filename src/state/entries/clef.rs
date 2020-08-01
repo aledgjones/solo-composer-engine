@@ -2,7 +2,7 @@ use crate::state::entries::Entry;
 use crate::utils::measurements::{BoundingBox, Padding, Spaces};
 use crate::utils::pitch::{Accidental, Pitch};
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
 pub struct Clef {
     pub key: String,
     pub tick: u32,

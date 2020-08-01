@@ -3,7 +3,7 @@ use crate::utils::measurements::{Padding, Spaces, MM};
 use crate::utils::shortid;
 use crate::utils::text::{Font, Justify};
 
-#[derive(Serialize_repr)]
+#[derive(Serialize_repr, Deserialize_repr)]
 #[repr(u8)]
 pub enum Bracketing {
     None,
@@ -11,7 +11,7 @@ pub enum Bracketing {
     SmallEnsemble,
 }
 
-#[derive(Serialize_repr)]
+#[derive(Serialize_repr, Deserialize_repr)]
 #[repr(u8)]
 pub enum BracketStyle {
     None,
@@ -19,7 +19,7 @@ pub enum BracketStyle {
     Line,
 }
 
-#[derive(Serialize_repr)]
+#[derive(Serialize_repr, Deserialize_repr)]
 #[repr(u8)]
 pub enum LayoutType {
     Score,
@@ -27,7 +27,7 @@ pub enum LayoutType {
     Custom,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
 pub struct Engrave {
     pub key: String,
     pub layout_type: LayoutType,

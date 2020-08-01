@@ -14,11 +14,10 @@ use crate::state::score::instrument::Instrument;
 use crate::state::score::meta::Meta;
 use crate::state::score::player::Players;
 use crate::state::Engine;
-use js_sys::Date;
 use std::collections::HashMap;
 use wasm_bindgen::prelude::*;
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
 pub struct Score {
     pub meta: Meta,
     pub config: Config,
@@ -50,7 +49,9 @@ impl Score {
 
 #[wasm_bindgen]
 impl Engine {
-    pub fn update(&mut self) {
-        self.state.meta.modified = Date::now();
+    /// Clear all the score state and reset back to blank
+    pub fn reset(&mut self) {
+        self.state = Score::new();
+        self.emit();
     }
 }

@@ -1,6 +1,6 @@
 use crate::utils::measurements::{Padding, Spaces};
 
-#[derive(Serialize_repr)]
+#[derive(Serialize_repr, Deserialize_repr)]
 #[repr(u8)]
 pub enum Justify {
     Start,
@@ -18,7 +18,7 @@ impl Justify {
     }
 }
 
-#[derive(Serialize_repr)]
+#[derive(Serialize_repr, Deserialize_repr)]
 #[repr(u8)]
 pub enum Align {
     Top,
@@ -36,7 +36,7 @@ impl Align {
     }
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
 pub struct Font {
     pub size: Spaces,
     pub font: String,

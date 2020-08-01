@@ -1,7 +1,7 @@
 use crate::state::score::instrument::defs::StaveDef;
 use crate::state::score::track::Track;
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
 pub struct Stave {
     pub key: String,
     pub lines: u8,

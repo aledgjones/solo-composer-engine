@@ -10,9 +10,12 @@ use crate::utils::shortid;
 use std::collections::{HashMap, HashSet};
 use wasm_bindgen::prelude::*;
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
 pub struct Tick {
     pub tick: u32,
+    pub bar: u32,
+    pub beat: u32,
+    pub sixteenth: f64,
     pub x: f32,
     pub width: f32,
     pub is_beat: bool,
@@ -21,7 +24,7 @@ pub struct Tick {
     pub is_grouping_boundry: bool,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
 pub struct TickList {
     pub list: Vec<Tick>,
     pub width: f32,
@@ -34,13 +37,14 @@ impl TickList {
     }
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
 pub struct Flow {
     pub key: String,
     pub title: String,
     pub players: HashSet<String>, // purely for inclusion lookup -- order comes from score.players.order
     pub length: u32,              // number of subdivision ticks in the flow
     pub subdivisions: u8,         // how many times to subdevide the crotchet
+    pub ticks: TickList,
 
     pub master: Track,
     pub staves: HashMap<String, Stave>,
@@ -53,8 +57,12 @@ impl Flow {
             key: shortid(),
             title: String::from(""),
             players: HashSet::new(),
-            length: 16,       // 1 crotchet beat
+            length: 16,       // 1 quarter beats
             subdivisions: 16, // auto it to 32nd notes as this is the shortest snap
+            ticks: TickList {
+                list: Vec::new(),
+                width: 0.0,
+            },
 
             master: Track::new(),
             staves: HashMap::new(),
@@ -69,6 +77,8 @@ impl Flow {
             TimeSignatureDrawType::Hidden, // a sort of fake time signature shown as hidden
             None,
         ));
+
+        flow.calc_ticks();
 
         flow
     }
@@ -94,16 +104,18 @@ impl Flow {
         }
     }
 
-    pub fn get_ticks(&self) -> TickList {
+    /// Calculate the timestamp parts, and the drawn tick widths for the tick track
+    pub fn calc_ticks(&mut self) {
         let crotchet_width = 72.0;
         let mut ticks = TickList {
             list: Vec::new(),
             width: 0.0,
         };
 
+        let mut bar: u32 = 0;
         let mut result: Option<&TimeSignature> = None;
 
-        for tick in 0..self.length {
+        for tick in 0..self.length + 1 {
             match self.master.get_time_signature_at_tick(tick) {
                 Some(time_signature) => {
                     result = Some(time_signature);
@@ -113,18 +125,43 @@ impl Flow {
 
             let time_signature = match result {
                 Some(time_signature) => time_signature,
-                None => return ticks, // this will never happen so return early if it does
+                None => {
+                    return {
+                        self.ticks = ticks;
+                    }
+                }
             };
 
-            let ticks_per_crotchet = NoteDuration::Quarter.to_ticks(self.subdivisions);
-            let tick_width = crotchet_width / ticks_per_crotchet as f32;
+            let ticks_per_quarter = NoteDuration::Quarter.to_ticks(self.subdivisions);
+            let ticks_per_sixteenth = NoteDuration::Sixteenth.to_ticks(self.subdivisions);
+            let distance_from_barline =
+                time_signature.distance_from_barline(tick, self.subdivisions);
+
+            let tick_width = if tick < self.length {
+                crotchet_width / ticks_per_quarter as f32
+            } else {
+                1.0 // 1px width to show tick mark
+            };
+
+            let beat = (f64::from(distance_from_barline) / f64::from(ticks_per_quarter)).floor()
+                as u32
+                + 1;
+            let sixteenth = f64::from(distance_from_barline % u32::from(ticks_per_quarter))
+                / f64::from(ticks_per_sixteenth);
+
+            if distance_from_barline == 0 {
+                bar = bar + 1;
+            }
 
             ticks.push(Tick {
                 tick,
+                bar,
+                beat,
+                sixteenth,
                 x: ticks.width,
                 width: tick_width,
                 is_beat: time_signature.is_on_beat(tick, self.subdivisions),
-                is_first_beat: time_signature.is_on_first_beat(tick, self.subdivisions),
+                is_first_beat: distance_from_barline == 0,
                 is_quaver_beat: time_signature.is_on_beat_type(
                     tick,
                     self.subdivisions,
@@ -134,11 +171,11 @@ impl Flow {
             });
         }
 
-        ticks
+        self.ticks = ticks;
     }
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
 pub struct Flows {
     pub order: Vec<String>,
     pub by_key: HashMap<String, Flow>,
@@ -172,10 +209,10 @@ impl Engine {
             flow.add_instrument(instrument);
         }
 
+        flow.calc_ticks();
         self.state.flows.order.push(flow.key.clone());
         self.state.flows.by_key.insert(flow.key.clone(), flow);
-
-        self.update();
+        self.state.meta.set_modified();
         self.emit();
 
         JsValue::from_str(&flow_key)
@@ -188,7 +225,7 @@ impl Engine {
             }
             None => return (),
         };
-        self.update();
+        self.state.meta.set_modified();
         self.emit();
     }
 
@@ -196,25 +233,26 @@ impl Engine {
         match self.state.flows.by_key.get_mut(flow_key) {
             Some(flow) => {
                 flow.length = length;
+                flow.calc_ticks();
             }
             None => return (),
         };
 
-        self.update();
+        self.state.meta.set_modified();
         self.emit();
     }
 
     pub fn reorder_flow(&mut self, old_index: u8, new_index: u8) {
         let removed = self.state.flows.order.remove(old_index as usize);
         self.state.flows.order.insert(new_index as usize, removed);
-        self.update();
+        self.state.meta.set_modified();
         self.emit();
     }
 
     pub fn remove_flow(&mut self, flow_key: &str) {
         self.state.flows.order.retain(|e| e != flow_key);
         self.state.flows.by_key.remove(flow_key);
-        self.update();
+        self.state.meta.set_modified();
         self.emit();
     }
 
@@ -245,7 +283,7 @@ impl Engine {
             flow.add_instrument(instrument);
         }
 
-        self.update();
+        self.state.meta.set_modified();
         self.emit();
     }
 
@@ -281,22 +319,7 @@ impl Engine {
             }
         }
 
-        self.update();
+        self.state.meta.set_modified();
         self.emit();
-    }
-
-    pub fn get_ticks(&self, flow_key: &str) -> JsValue {
-        let flow = match self.state.flows.by_key.get(flow_key) {
-            Some(flow) => flow,
-            None => {
-                let empty = TickList {
-                    list: Vec::new(),
-                    width: 0.0,
-                };
-                return JsValue::from_serde(&empty).unwrap();
-            }
-        };
-        let ticks = flow.get_ticks();
-        JsValue::from_serde(&ticks).unwrap()
     }
 }

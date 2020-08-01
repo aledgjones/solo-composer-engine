@@ -3,7 +3,7 @@ use crate::utils::measurements::{BoundingBox, Padding, Spaces};
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
-#[derive(Debug, Serialize_repr)]
+#[derive(Debug, Serialize_repr, Deserialize_repr)]
 #[repr(u8)]
 pub enum BarlineType {
     Double,
@@ -14,7 +14,7 @@ pub enum BarlineType {
     StartRepeat,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Barline {
     pub key: String,
     pub tick: u32,

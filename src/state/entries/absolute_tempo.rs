@@ -5,7 +5,7 @@ use crate::utils::measurements::{BoundingBox, Padding, Spaces};
 use crate::utils::shortid;
 use wasm_bindgen::prelude::*;
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
 pub struct AbsoluteTempo {
     pub key: String,
     pub tick: u32,
@@ -127,8 +127,8 @@ impl Engine {
 
         // we are now done with the entry, insert it back in
         flow.master.insert(entry);
-
-        self.update();
+        flow.calc_ticks();
+        self.state.meta.set_modified();
         self.emit();
 
         JsValue::from_str(key.as_str())

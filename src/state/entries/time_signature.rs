@@ -13,7 +13,7 @@ enum TimeSignatureType {
 }
 
 #[wasm_bindgen]
-#[derive(Debug, Serialize_repr)]
+#[derive(Debug, Serialize_repr, Deserialize_repr)]
 #[repr(u8)]
 pub enum TimeSignatureDrawType {
     Hidden,          // always hidden
@@ -22,7 +22,7 @@ pub enum TimeSignatureDrawType {
     SplitCommonTime, // '¢'
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
 pub struct TimeSignature {
     pub key: String,
     pub tick: u32,
@@ -120,14 +120,6 @@ impl TimeSignature {
     pub fn is_on_beat_type(&self, tick: u32, subdivisions: u8, beat_type: &NoteDuration) -> bool {
         let ticks_per_beat = beat_type.to_ticks(subdivisions) as u32;
         ((tick - self.tick) % ticks_per_beat) == 0
-    }
-
-    // Returns true if the tick is on the first beat of the bar
-    pub fn is_on_first_beat(&self, tick: u32, subdivisions: u8) -> bool {
-        match self.kind() {
-            TimeSignatureType::Open => tick == self.tick,
-            _ => self.distance_from_barline(tick, subdivisions) == 0,
-        }
     }
 
     // Returns true is the tick is on a beat group boundry
@@ -242,50 +234,10 @@ impl Engine {
 
         // we are now done with the entry, insert it back in
         flow.master.insert(entry);
-
-        self.update();
+        flow.calc_ticks();
+        self.state.meta.set_modified();
         self.emit();
 
         JsValue::from_str(key.as_str())
-    }
-
-    /// Convert a tick to timestamp
-    pub fn tick_to_timestamp(&self, flow_key: &str, tick: u32) -> JsValue {
-        let flow = match self.state.flows.by_key.get(flow_key) {
-            Some(flow) => flow,
-            None => return JsValue::from_str("1:1:0.000"),
-        };
-
-        let ticks = flow.get_ticks();
-
-        let mut bar: u32 = 0;
-        for tick_entry in &ticks.list {
-            if tick_entry.tick > tick {
-                break;
-            } else if tick_entry.is_first_beat {
-                bar = bar + 1;
-            }
-        }
-
-        let time_signature = match flow.master.get_time_signature_on_or_before_tick(tick) {
-            Some(time_signature) => time_signature,
-            None => return JsValue::from_str("1:1:0.000"),
-        };
-
-        // It's standard by the looks of it for timestamps to be in crotchet beats for some reason,
-        // even if the time signature isn't. who'd have thunk it?
-        let ticks_per_quarter = NoteDuration::Quarter.to_ticks(flow.subdivisions);
-        let distance_from_barline = time_signature.distance_from_barline(tick, flow.subdivisions);
-
-        let beat =
-            (f64::from(distance_from_barline) / f64::from(ticks_per_quarter)).floor() as u32 + 1;
-
-        let ticks_per_sixteenth = NoteDuration::Sixteenth.to_ticks(flow.subdivisions);
-        let sixteenth = f64::from(distance_from_barline % u32::from(ticks_per_quarter))
-            / f64::from(ticks_per_sixteenth);
-
-        let timestamp = format!("{}:{}:{:.3}", bar, beat, sixteenth);
-
-        JsValue::from_str(&timestamp)
     }
 }

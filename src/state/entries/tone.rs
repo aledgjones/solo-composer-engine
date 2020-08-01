@@ -8,7 +8,7 @@ use wasm_bindgen::prelude::*;
 
 /// These represent the audiable tones of the music.
 /// They are never directly drawn in the score.
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
 pub struct Tone {
     pub key: String,
     pub tick: u32,
@@ -69,7 +69,7 @@ impl Engine {
             Velocity::new(velocity),
         ));
 
-        self.update();
+        self.state.meta.set_modified();
         self.emit();
 
         JsValue::from_str(key.as_str())
@@ -109,7 +109,7 @@ impl Engine {
         tone.pitch = Pitch::new(pitch, Accidental::default(pitch));
         tone.duration = Duration::new(duration);
 
-        self.update();
+        self.state.meta.set_modified();
         self.emit();
     }
 
@@ -127,7 +127,7 @@ impl Engine {
 
         track.remove(entry_key);
 
-        self.update();
+        self.state.meta.set_modified();
         self.emit();
     }
 
@@ -167,7 +167,7 @@ impl Engine {
             old_tone.velocity.clone(),
         ));
 
-        self.update();
+        self.state.meta.set_modified();
         self.emit();
     }
 }
