@@ -31,6 +31,12 @@ pub struct TickList {
 }
 
 impl TickList {
+    pub fn new() -> Self {
+        Self {
+            list: Vec::new(),
+            width: 0.0,
+        }
+    }
     pub fn push(&mut self, tick: Tick) {
         self.width += tick.width;
         self.list.push(tick);
@@ -44,7 +50,6 @@ pub struct Flow {
     pub players: HashSet<String>, // purely for inclusion lookup -- order comes from score.players.order
     pub length: u32,              // number of subdivision ticks in the flow
     pub subdivisions: u8,         // how many times to subdevide the crotchet
-    pub ticks: TickList,
 
     pub master: Track,
     pub staves: HashMap<String, Stave>,
@@ -59,10 +64,6 @@ impl Flow {
             players: HashSet::new(),
             length: 16,       // 1 quarter beats
             subdivisions: 16, // auto it to 32nd notes as this is the shortest snap
-            ticks: TickList {
-                list: Vec::new(),
-                width: 0.0,
-            },
 
             master: Track::new(),
             staves: HashMap::new(),
@@ -105,12 +106,9 @@ impl Flow {
     }
 
     /// Calculate the timestamp parts, and the drawn tick widths for the tick track
-    pub fn calc_ticks(&mut self) {
+    pub fn calc_ticks(&self) -> TickList {
         let crotchet_width = 72.0;
-        let mut ticks = TickList {
-            list: Vec::new(),
-            width: 0.0,
-        };
+        let mut ticks = TickList::new();
 
         let mut bar: u32 = 0;
         let mut result: Option<&TimeSignature> = None;
@@ -125,11 +123,7 @@ impl Flow {
 
             let time_signature = match result {
                 Some(time_signature) => time_signature,
-                None => {
-                    return {
-                        self.ticks = ticks;
-                    }
-                }
+                None => return ticks,
             };
 
             let ticks_per_quarter = NoteDuration::Quarter.to_ticks(self.subdivisions);
@@ -171,7 +165,7 @@ impl Flow {
             });
         }
 
-        self.ticks = ticks;
+        ticks
     }
 }
 
@@ -199,60 +193,65 @@ impl Engine {
         let flow_key = flow.key.clone(); // return value
 
         // add all the player keys into the new flow
-        for player_key in &self.state.players.order {
+        for player_key in &self.state.score.players.order {
             flow.players.insert(player_key.clone());
         }
 
         // add stave / tracks for each instrument in the score
         // we do this for every player so we can loop the instruments directly
-        for (_instrument_key, instrument) in &self.state.instruments {
+        for (_instrument_key, instrument) in &self.state.score.instruments {
             flow.add_instrument(instrument);
         }
 
-        flow.calc_ticks();
-        self.state.flows.order.push(flow.key.clone());
-        self.state.flows.by_key.insert(flow.key.clone(), flow);
-        self.state.meta.set_modified();
+        self.state.ticks.insert(flow.key.clone(), flow.calc_ticks());
+        self.state.score.flows.order.push(flow.key.clone());
+        self.state.score.flows.by_key.insert(flow.key.clone(), flow);
+        self.state.score.meta.set_modified();
         self.emit();
 
         JsValue::from_str(&flow_key)
     }
 
     pub fn rename_flow(&mut self, flow_key: &str, name: &str) {
-        match self.state.flows.by_key.get_mut(flow_key) {
+        match self.state.score.flows.by_key.get_mut(flow_key) {
             Some(flow) => {
                 flow.title = String::from(name);
             }
             None => return (),
         };
-        self.state.meta.set_modified();
+        self.state.score.meta.set_modified();
         self.emit();
     }
 
     pub fn set_flow_length(&mut self, flow_key: &str, length: u32) {
-        match self.state.flows.by_key.get_mut(flow_key) {
+        match self.state.score.flows.by_key.get_mut(flow_key) {
             Some(flow) => {
                 flow.length = length;
-                flow.calc_ticks();
+                self.state.ticks.insert(flow.key.clone(), flow.calc_ticks());
             }
             None => return (),
         };
 
-        self.state.meta.set_modified();
+        self.state.score.meta.set_modified();
         self.emit();
     }
 
     pub fn reorder_flow(&mut self, old_index: u8, new_index: u8) {
-        let removed = self.state.flows.order.remove(old_index as usize);
-        self.state.flows.order.insert(new_index as usize, removed);
-        self.state.meta.set_modified();
+        let removed = self.state.score.flows.order.remove(old_index as usize);
+        self.state
+            .score
+            .flows
+            .order
+            .insert(new_index as usize, removed);
+        self.state.score.meta.set_modified();
         self.emit();
     }
 
     pub fn remove_flow(&mut self, flow_key: &str) {
-        self.state.flows.order.retain(|e| e != flow_key);
-        self.state.flows.by_key.remove(flow_key);
-        self.state.meta.set_modified();
+        self.state.score.flows.order.retain(|e| e != flow_key);
+        self.state.score.flows.by_key.remove(flow_key);
+        self.state.ticks.remove(flow_key);
+        self.state.score.meta.set_modified();
         self.emit();
     }
 
@@ -261,7 +260,7 @@ impl Engine {
      */
     pub fn assign_player(&mut self, flow_key: &str, player_key: &str) {
         // add the player_key to the flow
-        let flow = match self.state.flows.by_key.get_mut(flow_key) {
+        let flow = match self.state.score.flows.by_key.get_mut(flow_key) {
             Some(flow) => flow,
             None => return (),
         };
@@ -269,41 +268,41 @@ impl Engine {
         flow.players.insert(String::from(player_key));
 
         // get all the insturments assigned to the player
-        let instrument_keys = match self.state.players.by_key.get(player_key) {
+        let instrument_keys = match self.state.score.players.by_key.get(player_key) {
             Some(player) => &player.instruments,
             None => return (),
         };
 
         // add staves and tracks to this flow
         for instrument_key in instrument_keys {
-            let instrument = match self.state.instruments.get(instrument_key) {
+            let instrument = match self.state.score.instruments.get(instrument_key) {
                 Some(instrument) => instrument,
                 None => return (),
             };
             flow.add_instrument(instrument);
         }
 
-        self.state.meta.set_modified();
+        self.state.score.meta.set_modified();
         self.emit();
     }
 
     pub fn unassign_player(&mut self, flow_key: &str, player_key: &str) {
         // remove the player_key from the flow
-        let flow = match self.state.flows.by_key.get_mut(flow_key) {
+        let flow = match self.state.score.flows.by_key.get_mut(flow_key) {
             Some(flow) => flow,
             None => return (),
         };
         flow.players.remove(player_key);
 
         // get all the insturments assigned to the player
-        let instrument_keys = match self.state.players.by_key.get(player_key) {
+        let instrument_keys = match self.state.score.players.by_key.get(player_key) {
             Some(player) => &player.instruments,
             None => return (),
         };
 
         // delete staves and tracks in this flow
         for instrument_key in instrument_keys {
-            let stave_keys = match self.state.instruments.get(instrument_key) {
+            let stave_keys = match self.state.score.instruments.get(instrument_key) {
                 Some(instrument) => &instrument.staves,
                 None => return (),
             };
@@ -319,7 +318,7 @@ impl Engine {
             }
         }
 
-        self.state.meta.set_modified();
+        self.state.score.meta.set_modified();
         self.emit();
     }
 }

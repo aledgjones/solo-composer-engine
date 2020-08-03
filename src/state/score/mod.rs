@@ -13,9 +13,7 @@ use crate::state::score::flow::Flows;
 use crate::state::score::instrument::Instrument;
 use crate::state::score::meta::Meta;
 use crate::state::score::player::Players;
-use crate::state::Engine;
 use std::collections::HashMap;
-use wasm_bindgen::prelude::*;
 
 #[derive(Serialize, Deserialize)]
 pub struct Score {
@@ -44,14 +42,5 @@ impl Score {
             players: Players::new(),
             instruments: HashMap::new(),
         }
-    }
-}
-
-#[wasm_bindgen]
-impl Engine {
-    /// Clear all the score state and reset back to blank
-    pub fn reset(&mut self) {
-        self.state = Score::new();
-        self.emit();
     }
 }

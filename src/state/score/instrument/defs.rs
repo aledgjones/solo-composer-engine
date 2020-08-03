@@ -212,8 +212,6 @@ lazy_static! {
                 staves: vec![StaveDef::new(5, 60, 4)],
                 patches: hashmap! {
                     Expression::Natural => "/patches/viola/natural.json",
-                    Expression::Pizzicato => "/patches/viola/pizzicato.json",
-                    Expression::Staccato => "/patches/viola/staccato.json"
                 },
             },
             InstrumentDef {

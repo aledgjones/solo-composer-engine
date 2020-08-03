@@ -53,11 +53,11 @@ impl Engine {
         let player = Player::new(player_type);
         let returner = JsValue::from_str(&player.key);
 
-        self.state.players.order.push(player.key.clone());
+        self.state.score.players.order.push(player.key.clone());
 
         // include new player in all flows
-        for flow_key in &self.state.flows.order {
-            let flow = self.state.flows.by_key.get_mut(flow_key);
+        for flow_key in &self.state.score.flows.order {
+            let flow = self.state.score.flows.by_key.get_mut(flow_key);
             match flow {
                 Some(flow) => {
                     flow.players.insert(player.key.clone());
@@ -66,9 +66,12 @@ impl Engine {
             }
         }
 
-        self.state.players.by_key.insert(player.key.clone(), player);
-
-        self.state.meta.set_modified();
+        self.state
+            .score
+            .players
+            .by_key
+            .insert(player.key.clone(), player);
+        self.state.score.meta.set_modified();
         self.emit();
 
         returner
@@ -81,21 +84,21 @@ impl Engine {
         let player_key = String::from(player_key);
         let instrument_key = String::from(instrument_key);
 
-        match self.state.players.by_key.get_mut(&player_key) {
+        match self.state.score.players.by_key.get_mut(&player_key) {
             Some(player) => {
                 player.instruments.push(instrument_key.clone());
             }
             None => return JsValue::UNDEFINED,
         };
 
-        let instrument = match self.state.instruments.get(&instrument_key) {
+        let instrument = match self.state.score.instruments.get(&instrument_key) {
             Some(instrument) => instrument,
             None => return JsValue::UNDEFINED,
         };
 
         // add empty staves to each flow that contains the player
-        for flow_key in &self.state.flows.order {
-            match self.state.flows.by_key.get_mut(flow_key) {
+        for flow_key in &self.state.score.flows.order {
+            match self.state.score.flows.by_key.get_mut(flow_key) {
                 Some(flow) => {
                     if flow.players.contains(&player_key) {
                         flow.add_instrument(instrument);
@@ -106,24 +109,28 @@ impl Engine {
         }
 
         calc_counts(self);
-        self.state.meta.set_modified();
+        self.state.score.meta.set_modified();
         self.emit();
 
         JsValue::from_str(&player_key)
     }
 
     pub fn reorder_player(&mut self, old_index: u8, new_index: u8) {
-        let removed = self.state.players.order.remove(old_index as usize);
-        self.state.players.order.insert(new_index as usize, removed);
+        let removed = self.state.score.players.order.remove(old_index as usize);
+        self.state
+            .score
+            .players
+            .order
+            .insert(new_index as usize, removed);
 
         calc_counts(self);
-        self.state.meta.set_modified();
+        self.state.score.meta.set_modified();
         self.emit();
     }
 
     pub fn remove_player(&mut self, player_key: &str) {
         // delete all instruments that this player holds
-        let instrument_keys = match self.state.players.by_key.get(player_key) {
+        let instrument_keys = match self.state.score.players.by_key.get(player_key) {
             // we need to clone so instrument_keys isn't a ref to self and so we can use it later
             Some(player) => player.instruments.clone(),
             None => return (),
@@ -133,8 +140,8 @@ impl Engine {
         }
 
         // remove the player from each flow
-        for flow_key in &self.state.flows.order {
-            let flow = match self.state.flows.by_key.get_mut(flow_key) {
+        for flow_key in &self.state.score.flows.order {
+            let flow = match self.state.score.flows.by_key.get_mut(flow_key) {
                 Some(flow) => flow,
                 None => return (),
             };
@@ -142,11 +149,11 @@ impl Engine {
         }
 
         // remove the player itself
-        self.state.players.by_key.remove(player_key);
-        self.state.players.order.retain(|e| e != player_key);
+        self.state.score.players.by_key.remove(player_key);
+        self.state.score.players.order.retain(|e| e != player_key);
 
         calc_counts(self);
-        self.state.meta.set_modified();
+        self.state.score.meta.set_modified();
         self.emit();
     }
 }

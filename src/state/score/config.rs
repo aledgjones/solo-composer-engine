@@ -40,13 +40,13 @@ impl Config {
 #[wasm_bindgen]
 impl Engine {
     pub fn set_auto_count_style_solo(&mut self, value: AutoCountStyle) {
-        self.state.config.auto_count.solo = value;
-        self.state.meta.set_modified();
+        self.state.score.config.auto_count.solo = value;
+        self.state.score.meta.set_modified();
         self.emit();
     }
     pub fn set_auto_count_style_section(&mut self, value: AutoCountStyle) {
-        self.state.config.auto_count.section = value;
-        self.state.meta.set_modified();
+        self.state.score.config.auto_count.section = value;
+        self.state.score.meta.set_modified();
         self.emit();
     }
 }

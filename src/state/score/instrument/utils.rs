@@ -33,7 +33,7 @@ fn insert_counts(engine: &mut Engine, map: &HashMap<String, Vec<String>>) {
     for (_name, instrument_keys) in map {
         if instrument_keys.len() > 1 {
             for (i, instrument_key) in instrument_keys.iter().enumerate() {
-                match engine.state.instruments.get_mut(instrument_key) {
+                match engine.state.score.instruments.get_mut(instrument_key) {
                     Some(instrument) => instrument.count = Some(i as u8 + 1),
                     None => (),
                 };
@@ -104,8 +104,8 @@ pub fn calc_counts(engine: &mut Engine) {
     let mut instruments_section: HashMap<String, Vec<String>> = HashMap::new();
 
     // collect all the instruments in order, dependant on player type (as numbered seperately)
-    for player_key in &engine.state.players.order {
-        let player = match engine.state.players.by_key.get(player_key) {
+    for player_key in &engine.state.score.players.order {
+        let player = match engine.state.score.players.by_key.get(player_key) {
             Some(player) => player,
             None => return (),
         };
@@ -114,14 +114,14 @@ pub fn calc_counts(engine: &mut Engine) {
                 append_instruments(
                     &mut instruments_solo,
                     &player.instruments,
-                    &mut engine.state.instruments,
+                    &mut engine.state.score.instruments,
                 );
             }
             PlayerType::Section => {
                 append_instruments(
                     &mut instruments_section,
                     &player.instruments,
-                    &mut engine.state.instruments,
+                    &mut engine.state.score.instruments,
                 );
             }
         }

@@ -171,7 +171,13 @@ impl Engine {
         // we want to be able to return this at the end
         let key = shortid();
 
-        let flow = match self.state.flows.by_key.get_mut(&String::from(flow_key)) {
+        let flow = match self
+            .state
+            .score
+            .flows
+            .by_key
+            .get_mut(&String::from(flow_key))
+        {
             Some(flow) => flow,
             None => return JsValue::UNDEFINED,
         };
@@ -234,8 +240,10 @@ impl Engine {
 
         // we are now done with the entry, insert it back in
         flow.master.insert(entry);
-        flow.calc_ticks();
-        self.state.meta.set_modified();
+        self.state
+            .ticks
+            .insert(String::from(flow_key), flow.calc_ticks());
+        self.state.score.meta.set_modified();
         self.emit();
 
         JsValue::from_str(key.as_str())

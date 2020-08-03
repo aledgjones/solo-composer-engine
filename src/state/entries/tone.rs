@@ -50,7 +50,13 @@ impl Engine {
         // we want to be able to return this at the end
         let key = shortid();
 
-        let flow = match self.state.flows.by_key.get_mut(&String::from(flow_key)) {
+        let flow = match self
+            .state
+            .score
+            .flows
+            .by_key
+            .get_mut(&String::from(flow_key))
+        {
             Some(flow) => flow,
             None => return JsValue::UNDEFINED,
         };
@@ -69,7 +75,7 @@ impl Engine {
             Velocity::new(velocity),
         ));
 
-        self.state.meta.set_modified();
+        self.state.score.meta.set_modified();
         self.emit();
 
         JsValue::from_str(key.as_str())
@@ -85,7 +91,13 @@ impl Engine {
         duration: u32,
         pitch: u8,
     ) {
-        let flow = match self.state.flows.by_key.get_mut(&String::from(flow_key)) {
+        let flow = match self
+            .state
+            .score
+            .flows
+            .by_key
+            .get_mut(&String::from(flow_key))
+        {
             Some(flow) => flow,
             None => return (),
         };
@@ -109,13 +121,19 @@ impl Engine {
         tone.pitch = Pitch::new(pitch, Accidental::default(pitch));
         tone.duration = Duration::new(duration);
 
-        self.state.meta.set_modified();
+        self.state.score.meta.set_modified();
         self.emit();
     }
 
     /// Remove the tone
     pub fn remove_tone(&mut self, flow_key: &str, track_key: &str, entry_key: &str) {
-        let flow = match self.state.flows.by_key.get_mut(&String::from(flow_key)) {
+        let flow = match self
+            .state
+            .score
+            .flows
+            .by_key
+            .get_mut(&String::from(flow_key))
+        {
             Some(flow) => flow,
             None => return (),
         };
@@ -127,13 +145,19 @@ impl Engine {
 
         track.remove(entry_key);
 
-        self.state.meta.set_modified();
+        self.state.score.meta.set_modified();
         self.emit();
     }
 
     /// Slice a tone
     pub fn slice_tone(&mut self, flow_key: &str, track_key: &str, entry_key: &str, slice_at: u32) {
-        let flow = match self.state.flows.by_key.get_mut(&String::from(flow_key)) {
+        let flow = match self
+            .state
+            .score
+            .flows
+            .by_key
+            .get_mut(&String::from(flow_key))
+        {
             Some(flow) => flow,
             None => return (),
         };
@@ -167,7 +191,7 @@ impl Engine {
             old_tone.velocity.clone(),
         ));
 
-        self.state.meta.set_modified();
+        self.state.score.meta.set_modified();
         self.emit();
     }
 }
