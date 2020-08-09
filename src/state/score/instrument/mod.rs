@@ -1,7 +1,7 @@
 pub mod defs;
 pub mod utils;
 
-use crate::state::score::instrument::defs::get_def;
+use crate::state::score::instrument::defs::{get_def, InstrumentType};
 use crate::state::score::instrument::utils::calc_counts;
 use crate::state::Engine;
 use crate::utils::shortid;
@@ -11,10 +11,14 @@ use wasm_bindgen::prelude::*;
 pub struct Instrument {
     pub key: String,
     pub id: String,
+    pub instrument_type: InstrumentType,
     pub long_name: String,
     pub short_name: String,
     pub staves: Vec<String>,
     pub count: Option<u8>,
+    pub volume: u8, // 0-127
+    pub solo: bool,
+    pub mute: bool,
 }
 
 #[wasm_bindgen]
@@ -28,6 +32,7 @@ impl Engine {
         let instrument = Instrument {
             key: shortid(),
             id: String::from(id),
+            instrument_type: def.instrument_type,
             long_name: String::from(def.long_name),
             short_name: String::from(def.short_name),
             staves: def
@@ -36,6 +41,9 @@ impl Engine {
                 .map(|_| shortid())
                 .collect::<Vec<String>>(),
             count: None,
+            volume: 80,
+            solo: false,
+            mute: false,
         };
         let return_value = instrument.key.clone();
         self.state
@@ -102,6 +110,39 @@ impl Engine {
         self.state.score.instruments.remove(instrument_key);
 
         calc_counts(self);
+        self.state.score.meta.set_modified();
+        self.emit();
+    }
+
+    pub fn set_instrument_volume(&mut self, instrument_key: &str, value: u8) {
+        match self.state.score.instruments.get_mut(instrument_key) {
+            Some(instrument) => {
+                instrument.volume = value;
+            }
+            None => return (),
+        };
+        self.state.score.meta.set_modified();
+        self.emit();
+    }
+
+    pub fn set_instrument_solo(&mut self, instrument_key: &str, value: bool) {
+        match self.state.score.instruments.get_mut(instrument_key) {
+            Some(instrument) => {
+                instrument.solo = value;
+            }
+            None => return (),
+        };
+        self.state.score.meta.set_modified();
+        self.emit();
+    }
+
+    pub fn set_instrument_mute(&mut self, instrument_key: &str, value: bool) {
+        match self.state.score.instruments.get_mut(instrument_key) {
+            Some(instrument) => {
+                instrument.mute = value;
+            }
+            None => return (),
+        };
         self.state.score.meta.set_modified();
         self.emit();
     }

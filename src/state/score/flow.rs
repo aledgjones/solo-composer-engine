@@ -93,7 +93,13 @@ impl Flow {
         for (i, stave_key) in instrument.staves.iter().enumerate() {
             let track = Track::new();
             let clef = match def.staves.get(i) {
-                Some(def) => Clef::new(shortid(), 0, def.clef_pitch, def.clef_offset),
+                Some(def) => Clef::new(
+                    shortid(),
+                    0,
+                    def.clef_pitch,
+                    def.clef_offset,
+                    def.clef_draw_as,
+                ),
                 None => return (),
             };
 

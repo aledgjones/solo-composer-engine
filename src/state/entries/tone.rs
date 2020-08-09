@@ -6,6 +6,17 @@ use crate::utils::shortid;
 use crate::utils::velocity::Velocity;
 use wasm_bindgen::prelude::*;
 
+#[wasm_bindgen]
+#[derive(Debug, Serialize_repr, Deserialize_repr, Copy, Clone)]
+#[repr(u8)]
+pub enum Articulation {
+    None,
+    Staccato,
+    Staccatissimo,
+    Tenuto,
+    StaccatoTenuto,
+}
+
 /// These represent the audiable tones of the music.
 /// They are never directly drawn in the score.
 #[derive(Serialize, Deserialize)]
@@ -15,6 +26,7 @@ pub struct Tone {
     pub duration: Duration,
     pub pitch: Pitch, // the pitch that the clef sits on
     pub velocity: Velocity,
+    pub articulation: Articulation,
 }
 
 impl Tone {
@@ -24,6 +36,7 @@ impl Tone {
         duration: Duration,
         pitch: Pitch,
         velocity: Velocity,
+        articulation: Articulation,
     ) -> Entry {
         Entry::Tone(Self {
             key,
@@ -31,6 +44,7 @@ impl Tone {
             duration,
             pitch,
             velocity,
+            articulation,
         })
     }
 }
@@ -46,6 +60,7 @@ impl Engine {
         duration: u32,
         pitch: u8,
         velocity: u8,
+        articulation: Articulation,
     ) -> JsValue {
         // we want to be able to return this at the end
         let key = shortid();
@@ -73,6 +88,7 @@ impl Engine {
             Duration::new(duration),
             Pitch::new(pitch, Accidental::default(pitch)),
             Velocity::new(velocity),
+            articulation,
         ));
 
         self.state.score.meta.set_modified();
@@ -90,6 +106,7 @@ impl Engine {
         tick: u32,
         duration: u32,
         pitch: u8,
+        articulation: Articulation,
     ) {
         let flow = match self
             .state
@@ -120,6 +137,7 @@ impl Engine {
         };
         tone.pitch = Pitch::new(pitch, Accidental::default(pitch));
         tone.duration = Duration::new(duration);
+        tone.articulation = articulation;
 
         self.state.score.meta.set_modified();
         self.emit();
@@ -179,16 +197,18 @@ impl Engine {
             old_tone.key,
             old_tone.tick,
             Duration::new(slice_at - old_tone.tick),
-            old_tone.pitch.clone(),
-            old_tone.velocity.clone(),
+            old_tone.pitch,
+            old_tone.velocity,
+            old_tone.articulation,
         ));
 
         track.insert(Tone::new(
             shortid(),
             slice_at,
             Duration::new(old_tone.duration.int - (slice_at - old_tone.tick)),
-            old_tone.pitch.clone(),
-            old_tone.velocity.clone(),
+            old_tone.pitch,
+            old_tone.velocity,
+            old_tone.articulation,
         ));
 
         self.state.score.meta.set_modified();

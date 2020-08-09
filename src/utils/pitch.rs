@@ -1,7 +1,7 @@
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
-#[derive(Serialize_repr, Deserialize_repr, Clone)]
+#[derive(Serialize_repr, Deserialize_repr, Copy, Clone)]
 #[repr(u8)]
 pub enum Accidental {
     DoubleSharp,
@@ -34,7 +34,7 @@ impl Accidental {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Copy, Clone)]
 pub struct Pitch {
     // the midi number
     pub int: u8,
